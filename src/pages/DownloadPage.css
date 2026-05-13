@@ -1,0 +1,103 @@
+.downloadShell {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 20px 56px;
+}
+
+.downloadCard {
+  border-radius: 18px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.downloadHeader {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.downloadTitle {
+  font-size: 40px;
+  letter-spacing: -1px;
+  color: var(--text-strong);
+  text-decoration: none;
+}
+
+.downloadSubtitle {
+  margin-top: 10px;
+  color: var(--text);
+}
+
+.downloadMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+
+.metaLabel {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.metaValue {
+  color: var(--text-strong);
+  font-size: 15px;
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.downloadButton {
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--ring) 55%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ring) 32%, var(--panel)),
+    color-mix(in srgb, var(--ring) 16%, var(--panel))
+  );
+  color: var(--text-strong);
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 180ms ease, filter 180ms ease, border-color 180ms ease;
+}
+
+.downloadButton:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  border-color: color-mix(in srgb, var(--ring) 80%, var(--border));
+}
+
+.downloadButton:active {
+  transform: translateY(0);
+}
+
+.stateText {
+  text-align: center;
+  color: var(--text);
+}
+
+.stateStrong {
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+@media (max-width: 520px) {
+  .downloadTitle {
+    font-size: 32px;
+  }
+}

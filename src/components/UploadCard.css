@@ -1,0 +1,257 @@
+.uploadSection {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 20px 56px;
+}
+
+.uploadHeader {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.uploadTitle {
+  margin: 0;
+  font-size: 44px;
+  letter-spacing: -1px;
+  color: var(--text-strong);
+}
+
+.uploadSubtitle {
+  margin: 10px 0 0;
+  color: var(--text);
+}
+
+.uploadCard {
+  margin-top: 22px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--shadow);
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+
+.uploadCard:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--border) 75%, var(--ring));
+}
+
+.dropzone {
+  position: relative;
+  border-radius: 16px;
+  background: var(--panel-2);
+  border: 1px dashed color-mix(in srgb, var(--border) 60%, var(--ring));
+  padding: 18px;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 180ms ease, border-color 180ms ease,
+    background 180ms ease;
+}
+
+.dropzone:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--border) 40%, var(--ring));
+}
+
+.dropzone:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.dropzoneActive {
+  background: color-mix(in srgb, var(--panel-2) 70%, var(--ring-soft));
+  border-color: var(--ring);
+}
+
+.dropzoneIcon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--panel) 80%, transparent);
+  border: 1px solid var(--border);
+  color: var(--text-strong);
+}
+
+.dropzoneIcon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.dropzoneText {
+  text-align: center;
+}
+
+.dropzonePrimary {
+  font-weight: 600;
+  color: var(--text-strong);
+  letter-spacing: -0.2px;
+}
+
+.dropzoneSecondary {
+  margin-top: 4px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.dropzoneLink {
+  color: var(--text-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.fileInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.filePill {
+  max-width: 65%;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text-strong);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filePillEmpty {
+  color: var(--text);
+}
+
+.inputWithIcon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.inputWithIcon:focus-within {
+  border-color: var(--ring);
+  transform: translateY(-1px);
+}
+
+.inputIcon {
+  width: 18px;
+  height: 18px;
+  color: var(--text);
+}
+
+.inputIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.textInput {
+  appearance: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-strong);
+  width: 100%;
+  font-size: 15px;
+}
+
+.textInput::placeholder {
+  color: color-mix(in srgb, var(--text) 70%, transparent);
+}
+
+.uploadButton {
+  margin-top: 6px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--ring) 55%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ring) 32%, var(--panel)),
+    color-mix(in srgb, var(--ring) 16%, var(--panel))
+  );
+  color: var(--text-strong);
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  transition: transform 180ms ease, filter 180ms ease,
+    border-color 180ms ease;
+}
+
+.uploadButton:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  border-color: color-mix(in srgb, var(--ring) 80%, var(--border));
+}
+
+.uploadButton:active {
+  transform: translateY(0);
+}
+
+.uploadButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+.helperText {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+@media (max-width: 520px) {
+  .uploadTitle {
+    font-size: 34px;
+  }
+
+  .uploadCard {
+    padding: 14px;
+  }
+
+  .fieldRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filePill {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
