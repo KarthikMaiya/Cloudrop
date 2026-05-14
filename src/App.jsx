@@ -5,8 +5,6 @@ import UploadCard from './components/UploadCard'
 import { uploadFile } from './utils/uploadFile'
 import DownloadPage from './pages/DownloadPage'
 import { Routes, Route } from 'react-router-dom'
-import { AWS_REGION } from './aws-config'
-import { buildS3ObjectUrl } from './utils/s3Url'
 import { saveLinkMetadata } from './utils/linkStorage'
 import { sanitizeLinkId } from './utils/linkId'
 import { saveLink } from './utils/saveLink'
@@ -17,9 +15,21 @@ function App() {
   // File + link state live in App so the upload flow is easy to follow.
   const [selectedFile, setSelectedFile] = useState(null)
   const [customLink, setCustomLink] = useState('')
+  // expiryMinutes must remain a plain number
+  const [expiryMinutes, setExpiryMinutes] = useState(10)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStatus, setUploadStatus] = useState('')
   const [isUploading, setIsUploading] = useState(false)
+  const [shareUrl, setShareUrl] = useState('')
+  const [uploadError, setUploadError] = useState('')
 
   async function handleUpload() {
+    if (isUploading) return
+
+    setUploadError('')
+    setShareUrl('')
+    setUploadProgress(0)
+
     if (!selectedFile) {
       alert('Please select a file first.')
       return
@@ -30,7 +40,6 @@ function App() {
       return
     }
 
-    const bucketName = import.meta.env.VITE_S3_BUCKET_NAME
     const linkId = sanitizeLinkId(customLink)
 
     if (!linkId) {
@@ -38,31 +47,28 @@ function App() {
       return
     }
 
-    const expiresAt = Date.now() + 10 * 60 * 1000
+    const expiresAt = Date.now() + expiryMinutes * 60 * 1000
 
     setIsUploading(true)
+    setUploadStatus('Preparing upload...')
     try {
-      const result = await uploadFile({
+      const fileUrl = await uploadFile({
         file: selectedFile,
-        bucketName,
-        // Reuse the linkId as a friendly S3 prefix.
-        customLink: linkId,
+        linkId,
+        onProgress: (progress) => {
+          setUploadProgress(progress)
+          setUploadStatus(`Uploading... ${progress}%`)
+        },
       })
 
-      if (!result) return
-
-      const fileUrl = buildS3ObjectUrl({
-        bucketName: result.bucketName,
-        region: AWS_REGION,
-        objectKey: result.objectKey,
-      })
+      setUploadStatus('Finalizing link...')
 
       // Save metadata through API Gateway → Lambda → DynamoDB.
       await saveLink({
         linkId,
         fileUrl,
         fileName: selectedFile.name,
-        expiresAt,
+        expiryMinutes,
       })
 
       const metadata = {
@@ -75,10 +81,37 @@ function App() {
 
       saveLinkMetadata(linkId, metadata)
 
-      alert(`Share this link: http://localhost:5173/${linkId}`)
+      setShareUrl(`http://localhost:5173/${linkId}`)
+      setUploadProgress(100)
+      setUploadStatus('Upload complete')
+    } catch (error) {
+      console.error(error)
+      setUploadError(
+        error?.message
+          ? `Upload failed: ${error.message}`
+          : 'Upload failed. Please try again.',
+      )
+      setUploadProgress(0)
+      setUploadStatus('')
     } finally {
       setIsUploading(false)
     }
+  }
+
+  function handleFileSelected(file) {
+    setSelectedFile(file)
+    setShareUrl('')
+    setUploadError('')
+    setUploadProgress(0)
+    setUploadStatus('')
+  }
+
+  function handleCustomLinkChange(value) {
+    setCustomLink(value)
+    setShareUrl('')
+    setUploadError('')
+    setUploadProgress(0)
+    setUploadStatus('')
   }
 
   return (
@@ -93,11 +126,17 @@ function App() {
               element={
                 <UploadCard
                   selectedFile={selectedFile}
-                  onFileSelected={setSelectedFile}
+                  onFileSelected={handleFileSelected}
                   customLink={customLink}
-                  onCustomLinkChange={setCustomLink}
+                  onCustomLinkChange={handleCustomLinkChange}
+                  expiryMinutes={expiryMinutes}
+                  setExpiryMinutes={setExpiryMinutes}
                   onUpload={handleUpload}
                   isUploading={isUploading}
+                  uploadProgress={uploadProgress}
+                  uploadStatus={uploadStatus}
+                  shareUrl={shareUrl}
+                  uploadError={uploadError}
                 />
               }
             />

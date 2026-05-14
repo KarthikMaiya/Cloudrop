@@ -11,11 +11,18 @@ export default function UploadCard({
   onFileSelected,
   customLink,
   onCustomLinkChange,
+  expiryMinutes,
+  setExpiryMinutes,
   onUpload,
   isUploading,
+  uploadProgress,
+  uploadStatus,
+  shareUrl,
+  uploadError,
 }) {
   const fileInputRef = useRef(null)
   const [isDragActive, setIsDragActive] = useState(false)
+  const [copyState, setCopyState] = useState('')
 
   const selectedFileName = useMemo(
     () => formatFileName(selectedFile),
@@ -67,7 +74,31 @@ export default function UploadCard({
 
   async function handleSubmit(event) {
     event.preventDefault()
+    if (isUploading) return
+    setCopyState('')
     await onUpload?.()
+  }
+
+  async function handleCopyLink() {
+    if (!shareUrl) return
+
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setCopyState('Copied!')
+    } catch {
+      // Fallback for older browsers / non-secure contexts.
+      const textarea = document.createElement('textarea')
+      textarea.value = shareUrl
+      textarea.style.position = 'fixed'
+      textarea.style.left = '-9999px'
+      document.body.appendChild(textarea)
+      textarea.focus()
+      textarea.select()
+
+      const ok = document.execCommand('copy')
+      document.body.removeChild(textarea)
+      setCopyState(ok ? 'Copied!' : 'Copy failed')
+    }
   }
 
   return (
@@ -164,17 +195,90 @@ export default function UploadCard({
           </div>
         </label>
 
+        <div className="expiryContainer">
+          <label className="expiryLabel" htmlFor="expiryMinutes">
+            Expiry
+          </label>
+          <select
+            id="expiryMinutes"
+            className="expirySelect"
+            value={expiryMinutes}
+            onChange={(e) =>
+              setExpiryMinutes(Number(e.target.value))
+            }
+            disabled={isUploading}
+          >
+            <option value={2}>2 Minutes</option>
+            <option value={5}>5 Minutes</option>
+            <option value={10}>10 Minutes</option>
+          </select>
+
+          <p className="helperText">Files will be permanently deleted after expiry.</p>
+        </div>
+
         <button
           className="uploadButton"
           type="submit"
           disabled={!selectedFile || isUploading}
         >
-          {isUploading ? 'Uploading…' : 'Upload'}
+          {isUploading ? 'Uploading...' : 'Upload'}
         </button>
 
-        <p className="helperText">
-          Links expire automatically after 10 minutes
-        </p>
+        {(isUploading || uploadStatus) && (
+          <div className="progressWrapper">
+            <div className="progressBar">
+              <div
+                className="progressFill"
+                style={{
+                  width: `${uploadProgress}%`,
+                }}
+              />
+            </div>
+
+            <p className="progressText">{uploadStatus}</p>
+          </div>
+        )}
+
+        {shareUrl ? (
+          <>
+            <label className="field">
+              <span className="fieldLabel">Share link</span>
+              <div className="inputWithIcon">
+                <input
+                  className="textInput"
+                  type="text"
+                  value={shareUrl}
+                  readOnly
+                  onFocus={(e) => e.target.select()}
+                  aria-label="Generated shareable link"
+                />
+              </div>
+            </label>
+
+            <button
+              className="uploadButton"
+              type="button"
+              onClick={handleCopyLink}
+              disabled={isUploading}
+            >
+              Copy link
+            </button>
+          </>
+        ) : null}
+
+        {uploadError ? (
+          <p className="helperText" role="alert">
+            {uploadError}
+          </p>
+        ) : null}
+
+        {copyState ? (
+          <p className="helperText" aria-live="polite">
+            {copyState}
+          </p>
+        ) : null}
+
+        <p className="helperText">Links expire automatically after {expiryMinutes} minutes</p>
       </form>
     </section>
   )

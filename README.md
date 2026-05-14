@@ -1,5 +1,13 @@
 # React + Vite
 
+## Cloudrop env setup
+
+No environment variables are required for the frontend upload flow.
+
+Uploads use a presigned URL from:
+
+- `POST https://ndr7vjmp6d.execute-api.ap-south-1.amazonaws.com/prod/generate-upload-url`
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

@@ -1,15 +1,18 @@
 const API_URL =
   'https://ndr7vjmp6d.execute-api.ap-south-1.amazonaws.com/prod/save-link'
 
-export async function saveLink({ linkId, fileUrl, fileName, expiresAt }) {
-  const payload = { linkId, fileUrl, fileName, expiresAt }
-
+export async function saveLink({ linkId, fileUrl, fileName, expiryMinutes }) {
   const response = await fetch(API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      linkId,
+      fileUrl,
+      fileName,
+      expiryMinutes,
+    }),
   })
 
   if (!response.ok) {

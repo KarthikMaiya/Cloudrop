@@ -1,71 +1,78 @@
-import { PutObjectCommand } from '@aws-sdk/client-s3'
-import s3Client from '../aws-config'
+// Old frontend AWS SDK credential logic disabled after migration to presigned URL uploads.
+// Uploads are now performed via a backend-generated presigned URL.
+const GENERATE_UPLOAD_URL_API =
+  'https://ndr7vjmp6d.execute-api.ap-south-1.amazonaws.com/prod/generate-upload-url'
 
 /**
- * Upload a file to S3.
- * - Stores objects under the `uploads/` prefix
- * - Preserves the Content-Type
- * - Shows success/failure alerts
+ * Upload a file using a presigned URL.
+ * 1) Ask backend for { uploadUrl, fileUrl }
+ * 2) PUT the file bytes to uploadUrl
+ * 3) Return fileUrl
  */
-export async function uploadFile({ file, bucketName, customLink }) {
-  if (!file) {
-    alert('Please select a file first.')
-    return null
+export async function uploadFile({ file, linkId, onProgress }) {
+  if (!file) throw new Error('Please select a file first.')
+  if (!linkId) throw new Error('Missing linkId.')
+
+  const contentType = file.type || 'application/octet-stream'
+  const requestBody = {
+    fileName: file.name,
+    contentType,
+    linkId,
   }
 
-  if (!bucketName) {
-    alert('Missing S3 bucket name. Set VITE_S3_BUCKET_NAME in your .env file.')
-    return null
+  const createResp = await fetch(GENERATE_UPLOAD_URL_API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  })
+
+  if (!createResp.ok) {
+    const text = await createResp.text().catch(() => '')
+    throw new Error(
+      `Failed to get upload URL (${createResp.status}): ${text || createResp.statusText}`,
+    )
   }
 
-  // Use the custom link as a friendly key prefix if provided.
-  // Keep it simple and beginner-friendly: sanitize to safe URL-ish characters.
-  const safeCustom = (customLink || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-_/]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^[-/]+|[-/]+$/g, '')
+  const data = await createResp.json()
+  const uploadUrl = data?.uploadUrl
+  const fileUrl = data?.fileUrl
 
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, '_')
-
-  // Always store under uploads/
-  const keyBase = safeCustom ? `${safeCustom}/${safeName}` : safeName
-  const objectKey = `uploads/${Date.now()}-${keyBase}`
-
-  const params = {
-    Bucket: bucketName,
-    Key: objectKey,
-    Body: file,
-    ContentType: file.type || 'application/octet-stream',
+  if (!uploadUrl || !fileUrl) {
+    throw new Error('Invalid response from generate-upload-url (missing uploadUrl/fileUrl).')
   }
 
-  try {
-    // PutObject uploads the file bytes directly to your S3 bucket.
-    const command = new PutObjectCommand(params)
-    await s3Client.send(command)
+  // Upload file bytes to S3 using XMLHttpRequest so we can track progress.
+  await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', uploadUrl)
+    xhr.setRequestHeader('Content-Type', contentType)
 
-    return { bucketName, objectKey }
-  } catch (error) {
-    console.error('Upload Error:', error)
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable) return
+      const progress = Math.round((event.loaded / event.total) * 100)
+      if (typeof onProgress === 'function') onProgress(progress)
+    }
 
-    const errorName = error?.name || 'UnknownError'
-    const status = error?.$metadata?.httpStatusCode
-    const message = error?.message
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        if (typeof onProgress === 'function') onProgress(100)
+        resolve(null)
+      } else {
+        reject(
+          new Error(
+            `S3 upload failed (${xhr.status}): ${xhr.responseText || xhr.statusText}`,
+          ),
+        )
+      }
+    }
 
-    const details = [
-      `Reason: ${errorName}${status ? ` (HTTP ${status})` : ''}`,
-      message ? `Message: ${message}` : null,
-      '',
-      'Fix checklist:',
-      '- Bucket exists and is in the same region as AWS_REGION',
-      '- IAM user has s3:PutObject permission for this bucket',
-      '- S3 CORS allows PUT from http://localhost:5173',
-    ]
-      .filter(Boolean)
-      .join('\n')
+    xhr.onerror = () => reject(new Error('S3 upload failed (network error)'))
+    xhr.onabort = () => reject(new Error('S3 upload aborted'))
 
-    alert(`Upload failed.\n\n${details}`)
-    return null
-  }
+    xhr.send(file)
+  })
+
+  return fileUrl
 }
