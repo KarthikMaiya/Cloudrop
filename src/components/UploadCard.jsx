@@ -7,6 +7,7 @@ function formatFileName(file) {
 }
 
 export default function UploadCard({
+  layout = 'standalone',
   selectedFile,
   onFileSelected,
   customLink,
@@ -102,11 +103,20 @@ export default function UploadCard({
   }
 
   return (
-    <section className="uploadSection" aria-label="Upload">
-      <div className="uploadHeader">
-        <h1 className="uploadTitle">Cloudrop</h1>
-        <p className="uploadSubtitle">Temporary Cloud File Sharing</p>
-      </div>
+    <section
+      className={
+        layout === 'embedded'
+          ? 'uploadSection uploadSectionEmbedded'
+          : 'uploadSection'
+      }
+      aria-label="Upload"
+    >
+      {layout !== 'embedded' ? (
+        <div className="uploadHeader">
+          <h1 className="uploadTitle">Cloudrop</h1>
+          <p className="uploadSubtitle">Temporary Cloud File Sharing</p>
+        </div>
+      ) : null}
 
       <form className="uploadCard" onSubmit={handleSubmit}>
         <div

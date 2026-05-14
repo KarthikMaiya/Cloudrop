@@ -6,6 +6,5 @@
 
 .appMain {
   flex: 1;
-  display: grid;
-  place-items: center;
+  display: block;
 }

@@ -5,6 +5,11 @@
   padding: 40px 20px 56px;
 }
 
+.uploadSectionEmbedded {
+  max-width: none;
+  padding: 0;
+}
+
 .uploadHeader {
   text-align: center;
   margin-bottom: 18px;
@@ -25,13 +30,14 @@
 .uploadCard {
   margin-top: 22px;
   border-radius: 18px;
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel) 62%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--ring-soft));
   padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 24px 55px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(14px);
   transition: transform 180ms ease, border-color 180ms ease;
 }
 
@@ -40,11 +46,15 @@
   border-color: color-mix(in srgb, var(--border) 75%, var(--ring));
 }
 
+.uploadSectionEmbedded .uploadCard {
+  margin-top: 0;
+}
+
 .dropzone {
   position: relative;
   border-radius: 16px;
-  background: var(--panel-2);
-  border: 1px dashed color-mix(in srgb, var(--border) 60%, var(--ring));
+  background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--border) 55%, var(--ring));
   padding: 18px;
   display: grid;
   place-items: center;
@@ -158,8 +168,9 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--panel-2);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--panel-2) 80%, transparent);
+  backdrop-filter: blur(10px);
   transition: border-color 180ms ease, transform 180ms ease;
 }
 

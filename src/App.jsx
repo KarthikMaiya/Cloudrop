@@ -1,9 +1,9 @@
 import './App.css'
 
 import Navbar from './components/Navbar'
-import UploadCard from './components/UploadCard'
 import { uploadFile } from './utils/uploadFile'
 import DownloadPage from './pages/DownloadPage'
+import LandingPage from './pages/LandingPage'
 import { Routes, Route } from 'react-router-dom'
 import { saveLinkMetadata } from './utils/linkStorage'
 import { sanitizeLinkId } from './utils/linkId'
@@ -124,7 +124,7 @@ function App() {
             <Route
               path="/"
               element={
-                <UploadCard
+                <LandingPage
                   selectedFile={selectedFile}
                   onFileSelected={handleFileSelected}
                   customLink={customLink}
