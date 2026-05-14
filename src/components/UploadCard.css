@@ -10,6 +10,20 @@
   padding: 0;
 }
 
+.uploadSectionEmbedded .uploadCard {
+  padding: 16px;
+  gap: 12px;
+}
+
+.uploadSectionEmbedded .dropzone {
+  padding: 16px;
+}
+
+.uploadSectionEmbedded .dropzoneIcon {
+  width: 44px;
+  height: 44px;
+}
+
 .uploadHeader {
   text-align: center;
   margin-bottom: 18px;
@@ -335,5 +349,16 @@
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
+  }
+}
+
+@media (max-height: 760px) {
+  .uploadSectionEmbedded .uploadCard {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .uploadSectionEmbedded .dropzone {
+    padding: 14px;
   }
 }
