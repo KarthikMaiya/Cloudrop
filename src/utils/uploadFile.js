@@ -1,7 +1,7 @@
-// Old frontend AWS SDK credential logic disabled after migration to presigned URL uploads.
-// Uploads are now performed via a backend-generated presigned URL.
-const GENERATE_UPLOAD_URL_API =
-  'https://ndr7vjmp6d.execute-api.ap-south-1.amazonaws.com/prod/generate-upload-url'
+// Uploads are performed via a backend-generated presigned URL.
+// Use `VITE_API_URL` as the base (e.g. https://YOUR_API.execute-api.ap-south-1.amazonaws.com/prod)
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+const GENERATE_UPLOAD_URL_API = `${API_BASE}/generate-upload-url`
 
 /**
  * Upload a file using a presigned URL.

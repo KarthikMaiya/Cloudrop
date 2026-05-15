@@ -1,5 +1,5 @@
-const API_URL =
-  'https://ndr7vjmp6d.execute-api.ap-south-1.amazonaws.com/prod/save-link'
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+const API_URL = `${API_BASE}/save-link`
 
 export async function saveLink({ linkId, fileUrl, fileName, expiryMinutes }) {
   const response = await fetch(API_URL, {

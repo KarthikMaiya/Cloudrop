@@ -16,9 +16,8 @@ export default function DownloadPage() {
   useEffect(() => {
     async function fetchLink() {
       try {
-        const response = await fetch(
-          `https://ndr7vjmp6d.execute-api.ap-south-1.amazonaws.com/prod/get-link/${linkId}`
-        )
+        const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+        const response = await fetch(`${API_BASE}/get-link/${linkId}`)
 
         const data = await response.json()
 

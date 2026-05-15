@@ -1,24 +1,67 @@
-# React + Vite
+# Cloudrop (React + Vite)
 
-## Cloudrop env setup
+Cloudrop is a small frontend for temporary cloud file sharing. The frontend uses a backend API to generate presigned upload URLs and to manage expiring links; it does not include any long-lived cloud credentials in the client.
 
-No environment variables are required for the frontend upload flow.
+Important: do NOT commit secrets. This repository's `.gitignore` excludes `.env` and `.env.*`. Provide runtime configuration via environment variables (see below).
 
-Uploads use a presigned URL from:
+How it works
 
-- `POST https://ndr7vjmp6d.execute-api.ap-south-1.amazonaws.com/prod/generate-upload-url`
+- The frontend requests a presigned upload URL from your backend (`POST ${"${VITE_API_URL}"}/generate-upload-url`).
+- The browser `PUT`s file bytes directly to S3 using the presigned URL (tracking upload progress on the client).
+- After upload, the frontend tells the backend to save the link metadata (`POST ${"${VITE_API_URL}"}/save-link`).
+- Downloads are served from the stored `fileUrl` returned by the backend.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Required environment variables
 
-Currently, two official plugins are available:
+Create a `.env` (local, gitignored) and set:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```
+VITE_API_URL=https://YOUR_API.execute-api.ap-south-1.amazonaws.com/prod
+```
 
-## React Compiler
+Notes:
+- `VITE_API_URL` should be the full base URL of your API (including stage like `/prod`).
+- The frontend will append `/generate-upload-url`, `/save-link`, and `/get-link/:id` as needed.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Setup & local development
 
-## Expanding the ESLint configuration
+1. Install dependencies:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+```
+
+2. Run dev server:
+
+```bash
+npm run dev
+```
+
+3. Build for production:
+
+```bash
+npm run build
+```
+
+Deploying to Vercel
+
+1. Create a new Vercel project from this repository.
+2. In your Vercel project settings, add the environment variable `VITE_API_URL` with your API base URL.
+3. Deploy — Vercel will run the build and serve the static site.
+
+Security checklist (pre-deploy)
+
+- Ensure `.env` is excluded from git and contains no committed secrets.
+- Verify `VITE_API_URL` points to your API Gateway / backend — the frontend never needs AWS secret keys.
+- Remove any debug panels or temporary test UI from the frontend before sharing.
+
+Why this is safe for public repos
+
+The frontend only requires a backend to provide presigned S3 upload URLs and to manage link metadata. The browser never needs AWS access keys; these must remain on the backend.
+
+Additional resources
+
+- Vite: https://vitejs.dev
+- React: https://react.dev
+- Vercel: https://vercel.com/docs
+
