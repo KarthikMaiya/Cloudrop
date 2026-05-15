@@ -72,7 +72,6 @@ export default function LandingPage(props) {
 
   // Dedicated observer for features section to force-reset and replay animations
   const featuresRef = useRef(null)
-  const [featuresVisible, setFeaturesVisible] = useState(false)
 
   useEffect(() => {
     const el = featuresRef.current
@@ -195,10 +194,7 @@ export default function LandingPage(props) {
         </div>
       </section>
 
-      <section
-        className={"featuresSection" + (featuresVisible ? ' revealActive' : '')}
-        aria-label="Features"
-      >
+      <section className="featuresSection" aria-label="Features">
         <div className="container">
           <header className="sectionHeader" data-reveal="section">
             <h2 className="sectionTitle">Built for fast, temporary sharing</h2>
@@ -209,7 +205,6 @@ export default function LandingPage(props) {
           <div ref={featuresRef} className="featureGrid" data-reveal="cards">
             <FeatureCard
               index={0}
-              visible={featuresVisible}
               title="Temporary sharing"
               description="Generate a link and share it instantly. Links expire automatically."
               icon={
@@ -229,7 +224,6 @@ export default function LandingPage(props) {
 
             <FeatureCard
               index={1}
-              visible={featuresVisible}
               title="Auto-delete cleanup"
               description="Expired files are removed automatically so storage stays clean."
               icon={
@@ -244,7 +238,6 @@ export default function LandingPage(props) {
 
             <FeatureCard
               index={2}
-              visible={featuresVisible}
               title="Secure cloud uploads"
               description="Uploads go directly to S3 via a backend-generated presigned URL."
               icon={
@@ -264,7 +257,6 @@ export default function LandingPage(props) {
 
             <FeatureCard
               index={3}
-              visible={featuresVisible}
               title="Lightning-fast transfers"
               description="See real-time progress while your upload streams to the cloud."
               icon={

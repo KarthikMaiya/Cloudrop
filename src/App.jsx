@@ -5,7 +5,7 @@ import { uploadFile } from './utils/uploadFile'
 import DownloadPage from './pages/DownloadPage'
 import LandingPage from './pages/LandingPage'
 import { Routes, Route } from 'react-router-dom'
-import { saveLinkMetadata } from './utils/linkStorage'
+import { saveLinkMetadata, buildShareUrl } from './utils/linkStorage'
 import { sanitizeLinkId } from './utils/linkId'
 import { saveLink } from './utils/saveLink'
 
@@ -81,7 +81,7 @@ function App() {
 
       saveLinkMetadata(linkId, metadata)
 
-      setShareUrl(`http://localhost:5173/${linkId}`)
+      setShareUrl(buildShareUrl(linkId))
       setUploadProgress(100)
       setUploadStatus('Upload complete')
     } catch (error) {
