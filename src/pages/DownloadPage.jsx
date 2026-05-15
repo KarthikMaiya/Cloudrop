@@ -1,6 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
-import { QRCodeSVG } from 'qrcode.react'
 import './DownloadPage.css'
 
 function isExpired(expiresAt) {
@@ -43,7 +42,6 @@ export default function DownloadPage() {
   const [metadata, setMetadata] = useState(null)
   const [loading, setLoading] = useState(true)
   const [now, setNow] = useState(0)
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   useEffect(() => {
     const timerId = setInterval(() => {
@@ -202,29 +200,6 @@ export default function DownloadPage() {
               </span>
               Download File
             </button>
-
-            <div className="qrPanel">
-              <div className="qrPanelHeader">
-                <div>
-                  <div className="qrLabel">Scan to open on another device</div>
-                  <div className="qrHint">Share this link securely without copying it manually.</div>
-                </div>
-              </div>
-
-              <div className="qrFrame">
-                {shareUrl ? (
-                  <QRCodeSVG
-                    value={shareUrl}
-                    size={126}
-                    bgColor="transparent"
-                    fgColor="currentColor"
-                    level="M"
-                    includeMargin={false}
-                    className="qrCode"
-                  />
-                ) : null}
-              </div>
-            </div>
 
             <div className="returnCta">
               <div>

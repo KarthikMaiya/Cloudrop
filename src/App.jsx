@@ -21,6 +21,7 @@ function App() {
   const [uploadStatus, setUploadStatus] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const [shareUrl, setShareUrl] = useState('')
+  const [expiresAt, setExpiresAt] = useState(null)
   const [uploadError, setUploadError] = useState('')
 
   async function handleUpload() {
@@ -28,6 +29,7 @@ function App() {
 
     setUploadError('')
     setShareUrl('')
+    setExpiresAt(null)
     setUploadProgress(0)
 
     if (!selectedFile) {
@@ -47,7 +49,7 @@ function App() {
       return
     }
 
-    const expiresAt = Date.now() + expiryMinutes * 60 * 1000
+    const expiresAtTime = Date.now() + expiryMinutes * 60 * 1000
 
     setIsUploading(true)
     setUploadStatus('Preparing upload...')
@@ -75,13 +77,14 @@ function App() {
         linkId,
         fileName: selectedFile.name,
         url: fileUrl,
-        expiresAt,
+        expiresAt: expiresAtTime,
         createdAt: Date.now(),
       }
 
       saveLinkMetadata(linkId, metadata)
 
       setShareUrl(buildShareUrl(linkId))
+      setExpiresAt(expiresAtTime)
       setUploadProgress(100)
       setUploadStatus('Upload complete')
     } catch (error) {
@@ -109,6 +112,7 @@ function App() {
   function handleCustomLinkChange(value) {
     setCustomLink(value)
     setShareUrl('')
+    setExpiresAt(null)
     setUploadError('')
     setUploadProgress(0)
     setUploadStatus('')
@@ -136,6 +140,7 @@ function App() {
                   uploadProgress={uploadProgress}
                   uploadStatus={uploadStatus}
                   shareUrl={shareUrl}
+                  expiresAt={expiresAt}
                   uploadError={uploadError}
                 />
               }

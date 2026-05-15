@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, useEffect } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import './UploadCard.css'
 
 function formatFileName(file) {
@@ -19,16 +20,45 @@ export default function UploadCard({
   uploadProgress,
   uploadStatus,
   shareUrl,
+  expiresAt,
   uploadError,
 }) {
   const fileInputRef = useRef(null)
   const [isDragActive, setIsDragActive] = useState(false)
   const [copyState, setCopyState] = useState('')
+  const [now, setNow] = useState(0)
+
+  useEffect(() => {
+    if (!shareUrl || !expiresAt) return
+
+    const timerId = setInterval(() => {
+      setNow(Date.now())
+    }, 1000)
+
+    const initialUpdateId = window.setTimeout(() => {
+      setNow(Date.now())
+    }, 0)
+
+    return () => {
+      clearInterval(timerId)
+      clearTimeout(initialUpdateId)
+    }
+  }, [shareUrl, expiresAt])
 
   const selectedFileName = useMemo(
     () => formatFileName(selectedFile),
     [selectedFile],
   )
+
+  const timeLeftLabel = useMemo(() => {
+    if (!expiresAt || typeof expiresAt !== 'number') return 'Link expired'
+    const remainingMs = expiresAt - now
+    if (remainingMs <= 0) return 'Link expired'
+    const totalSeconds = Math.ceil(remainingMs / 1000)
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  }, [expiresAt, now])
 
   function acceptFile(file) {
     if (!file) return
@@ -275,6 +305,30 @@ export default function UploadCard({
             >
               Copy link
             </button>
+
+            <div className="sharePanel">
+              <div className="sharePanelTimer">
+                <div className="timerLabel">Expiry</div>
+                <div className="timerValue">{timeLeftLabel}</div>
+              </div>
+
+              <div className="sharePanelQr">
+                <div className="qrLabel">Scan to open on another device</div>
+                <div className="qrFrame">
+                  {shareUrl ? (
+                    <QRCodeSVG
+                      value={shareUrl}
+                      size={120}
+                      bgColor="transparent"
+                      fgColor="currentColor"
+                      level="M"
+                      includeMargin={false}
+                      className="qrCode"
+                    />
+                  ) : null}
+                </div>
+              </div>
+            </div>
           </>
         ) : null}
 
