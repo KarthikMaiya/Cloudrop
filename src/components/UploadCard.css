@@ -133,10 +133,7 @@
 }
 
 .fileInput {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
+  display: none;
 }
 
 .field {

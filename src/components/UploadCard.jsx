@@ -36,6 +36,7 @@ export default function UploadCard({
   }
 
   function onBrowseClick() {
+    if (typeof window === 'undefined') return
     fileInputRef.current?.click()
   }
 
@@ -161,15 +162,16 @@ export default function UploadCard({
               or <span className="dropzoneLink">browse</span> to select
             </div>
           </div>
-
-          <input
-            ref={fileInputRef}
-            className="fileInput"
-            type="file"
-            onChange={onFileInputChange}
-            aria-label="File upload input"
-          />
         </div>
+
+        <input
+          ref={fileInputRef}
+          className="fileInput"
+          type="file"
+          hidden
+          onChange={onFileInputChange}
+          aria-label="File upload input"
+        />
 
         <div className="fieldRow" aria-live="polite">
           <div className="fieldLabel">Selected file</div>
