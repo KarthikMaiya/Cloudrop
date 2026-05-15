@@ -1,104 +1,441 @@
 .downloadShell {
+  position: relative;
   width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
+  min-height: calc(100svh - var(--navbar-height));
+  display: grid;
+  place-items: center;
   padding: 40px 20px 56px;
+  overflow: hidden;
 }
 
-.downloadCard {
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--panel) 62%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--ring-soft));
-  padding: 18px;
-  box-shadow: 0 24px 55px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(14px);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.downloadBackdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--ring-soft) 35%, transparent) 0%, transparent 40%),
+    radial-gradient(circle at bottom right, color-mix(in srgb, var(--ring) 16%, transparent) 0%, transparent 35%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg) 92%, #000 8%), var(--bg));
+  pointer-events: none;
 }
 
 .downloadHeader {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
   text-align: center;
-  margin-bottom: 10px;
+  z-index: 1;
 }
 
 .downloadTitle {
-  font-size: 40px;
+  font-size: clamp(34px, 4vw, 44px);
   letter-spacing: -1px;
   color: var(--text-strong);
   text-decoration: none;
+  font-weight: 700;
+  text-shadow: 0 0 24px color-mix(in srgb, var(--ring-soft) 50%, transparent);
 }
 
 .downloadSubtitle {
-  margin-top: 10px;
+  margin: 10px 0 0;
   color: var(--text);
+  font-size: 14px;
 }
 
-.downloadMeta {
+.downloadCard {
+  position: relative;
+  z-index: 1;
+  width: min(760px, 100%);
+  border-radius: 28px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, var(--ring-soft));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel) 74%, transparent), color-mix(in srgb, var(--panel-2) 88%, transparent));
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px);
+  padding: 28px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px;
-  border-radius: 16px;
-  background: var(--panel-2);
+  gap: 18px;
+  animation: downloadCardIn 520ms var(--ease-out) both;
+}
+
+.downloadStateBlock {
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
   border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel-2) 74%, transparent);
 }
 
-.metaLabel {
-  font-size: 12px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+.downloadHero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
 }
 
-.metaValue {
+.fileBadge {
+  width: 68px;
+  height: 68px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ring) 28%, var(--panel)),
+    color-mix(in srgb, var(--ring-soft) 18%, var(--panel))
+  );
+  border: 1px solid color-mix(in srgb, var(--ring) 38%, var(--border));
   color: var(--text-strong);
-  font-size: 15px;
-  font-family: var(--mono);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.3);
+}
+
+.fileBadge svg {
+  width: 34px;
+  height: 34px;
+}
+
+.downloadHeroText {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: color-mix(in srgb, var(--text-dim) 90%, var(--ring-soft));
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 11px;
+}
+
+.fileName {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 1.08;
+  letter-spacing: -1px;
+  color: var(--text-strong);
   overflow-wrap: anywhere;
 }
 
+.downloadMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 12px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.downloadMetaRow span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  background: color-mix(in srgb, var(--panel-2) 66%, transparent);
+}
+
+.expiryPanel {
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  background: color-mix(in srgb, var(--panel-2) 80%, transparent);
+  padding: 16px 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.expiryPanelWarning {
+  border-color: color-mix(in srgb, #f59e0b 45%, var(--border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #f59e0b 16%, transparent);
+  animation: expiryPulse 1.4s ease-in-out infinite;
+}
+
+.expiryLabel {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+}
+
+.expiryValue {
+  color: var(--text-strong);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.expiryHelper {
+  color: var(--text);
+  font-size: 13px;
+}
+
 .downloadButton {
-  height: 44px;
-  border-radius: 14px;
+  min-height: 56px;
+  border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--ring) 55%, var(--border));
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--ring) 32%, var(--panel)),
-    color-mix(in srgb, var(--ring) 16%, var(--panel))
+    color-mix(in srgb, var(--ring) 38%, var(--panel)),
+    color-mix(in srgb, var(--ring) 18%, var(--panel))
   );
   color: var(--text-strong);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.2px;
-  text-decoration: none;
+  font-size: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: transform 180ms ease, filter 180ms ease, border-color 180ms ease;
+  gap: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  transition:
+    transform 180ms ease,
+    filter 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
-.downloadButton:hover {
+.downloadButton:hover:not(:disabled) {
   transform: translateY(-1px);
-  filter: brightness(1.05);
-  border-color: color-mix(in srgb, var(--ring) 80%, var(--border));
+  filter: brightness(1.06);
+  border-color: color-mix(in srgb, var(--ring) 82%, var(--border));
+  box-shadow:
+    0 22px 40px rgba(0, 0, 0, 0.32),
+    0 0 32px color-mix(in srgb, var(--ring) 18%, transparent);
 }
 
-.downloadButton:active {
+.downloadButton:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.downloadButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  filter: none;
+}
+
+.downloadButtonIcon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+}
+
+.downloadButtonIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.qrPanel {
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  background: color-mix(in srgb, var(--panel-2) 72%, transparent);
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.qrPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.qrLabel {
+  color: var(--text-strong);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.15px;
+}
+
+.qrHint {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.qrFrame {
+  width: fit-content;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  animation: qrReveal 520ms var(--ease-out) both;
+}
+
+.qrCode {
+  display: block;
+  color: var(--text-strong);
+}
+
+.returnCta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.returnQuestion {
+  color: var(--text-strong);
+  font-weight: 600;
+  letter-spacing: -0.15px;
+}
+
+.returnHint {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.returnButton {
+  min-height: 40px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, var(--ring-soft));
+  background: color-mix(in srgb, var(--panel-2) 80%, transparent);
+  color: var(--text-strong);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  transition: transform 180ms ease, border-color 180ms ease, filter 180ms ease;
+}
+
+.returnButton:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--ring) 60%, var(--border));
+  filter: brightness(1.04);
 }
 
 .stateText {
   text-align: center;
   color: var(--text);
+  font-size: 16px;
+  margin: 0;
 }
 
 .stateStrong {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-strong);
 }
 
-@media (max-width: 520px) {
-  .downloadTitle {
-    font-size: 32px;
+@keyframes downloadCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes qrReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes expiryPulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #f59e0b 16%, transparent);
+  }
+  50% {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #f59e0b 30%, transparent);
+  }
+}
+
+@media (max-width: 720px) {
+  .downloadShell {
+    padding: 92px 16px 32px;
+  }
+
+  .downloadHeader {
+    top: 18px;
+  }
+
+  .downloadCard {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .downloadHero {
+    grid-template-columns: 1fr;
+  }
+
+  .fileBadge {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+  }
+
+  .fileBadge svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .qrFrame {
+    width: 100%;
+    display: grid;
+    place-items: center;
+  }
+
+  .returnCta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .returnButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .downloadShell {
+    padding-top: 86px;
+  }
+
+  .downloadCard {
+    padding: 18px;
+    gap: 16px;
+  }
+
+  .downloadButton {
+    min-height: 52px;
+    font-size: 15px;
+  }
+
+  .expiryValue {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .downloadCard,
+  .qrFrame,
+  .expiryPanelWarning {
+    animation: none;
+  }
+
+  .downloadButton,
+  .returnButton {
+    transition: none;
   }
 }
