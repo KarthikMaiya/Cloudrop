@@ -1,6 +1,7 @@
 .landingRoot {
   width: 100%;
   --navbar-height: 64px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .container {
@@ -15,6 +16,8 @@
   padding: clamp(18px, 4vh, 44px) 0;
   display: flex;
   align-items: center;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .heroGrid {
@@ -42,12 +45,25 @@
   color: var(--text);
   font-size: 13px;
   letter-spacing: 0.2px;
+  /* Default hidden state */
+  opacity: 0;
+  transform: translateY(20px);
+  filter: blur(10px);
+  transition: transform 600ms var(--ease-out), opacity 600ms var(--ease-out), filter 600ms var(--ease-out);
+  transition-delay: 160ms;
+  will-change: transform, opacity, filter;
 }
 
 .heroTitle {
   font-size: clamp(40px, 4.6vw, 56px);
   line-height: 1.03;
   letter-spacing: -1.6px;
+  /* Default hidden state */
+  opacity: 0;
+  transform: translateY(-80px) scale(0.95);
+  filter: blur(8px);
+  transition: transform 650ms var(--ease-out), opacity 650ms var(--ease-out), filter 650ms var(--ease-out);
+  will-change: transform, opacity, filter;
 }
 
 .heroTitleGradient {
@@ -59,12 +75,23 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  /* Glow animation */
+  filter: drop-shadow(0 0 0 transparent);
+  transition: filter 650ms var(--ease-out);
+  will-change: filter;
 }
 
 .heroSubtitle {
   max-width: 60ch;
   color: var(--text);
   font-size: 15.5px;
+  /* Default hidden state */
+  opacity: 0;
+  transform: translateY(16px);
+  filter: blur(8px);
+  transition: transform 600ms var(--ease-out), opacity 600ms var(--ease-out), filter 600ms var(--ease-out);
+  transition-delay: 200ms;
+  will-change: transform, opacity, filter;
 }
 
 .heroStats {
@@ -72,6 +99,13 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 0;
+  /* Default hidden state */
+  opacity: 0;
+  transform: translateY(16px);
+  filter: blur(8px);
+  transition: transform 600ms var(--ease-out), opacity 600ms var(--ease-out), filter 600ms var(--ease-out);
+  transition-delay: 300ms;
+  will-change: transform, opacity, filter;
 }
 
 .statPill {
@@ -82,12 +116,46 @@
   backdrop-filter: blur(10px);
   color: var(--text-dim);
   font-size: 12.5px;
+  transition: transform 220ms ease, border-color 220ms ease, filter 220ms ease;
+}
+
+.statPill:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--border) 55%, var(--ring));
+  filter: brightness(1.06);
 }
 
 .heroCta {
   width: 100%;
   display: flex;
   justify-content: flex-end;
+  /* Default hidden state */
+  opacity: 0;
+  transform: translateY(16px);
+  filter: blur(8px);
+  transition: transform 600ms var(--ease-out), opacity 600ms var(--ease-out), filter 600ms var(--ease-out);
+  transition-delay: 360ms;
+  will-change: transform, opacity, filter;
+}
+
+/* Animate IN when intro-loaded class is added to root */
+.landingRoot.intro-loaded .heroTitle {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}
+
+.landingRoot.intro-loaded .heroTitleGradient {
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--ring) 55%, transparent));
+}
+
+.landingRoot.intro-loaded .heroKicker,
+.landingRoot.intro-loaded .heroSubtitle,
+.landingRoot.intro-loaded .heroStats,
+.landingRoot.intro-loaded .heroCta {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
 }
 
 .heroCta .uploadSectionEmbedded {
@@ -96,7 +164,28 @@
 }
 
 .featuresSection {
-  padding: 34px 0 44px;
+  min-height: calc(100svh - var(--navbar-height));
+  padding: clamp(28px, 5vh, 54px) 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  align-items: center;
+  /* Default hidden state for the entire section */
+  opacity: 0;
+  transform: translateY(56px);
+  filter: blur(10px);
+  transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out), filter 700ms var(--ease-out);
+  will-change: transform, opacity, filter;
+}
+
+.featuresSection.revealActive {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+.featuresSection > .container {
+  width: 100%;
 }
 
 .sectionHeader {
@@ -105,6 +194,18 @@
   gap: 10px;
   margin-bottom: 18px;
   text-align: center;
+  /* Default hidden state for scroll reveals */
+  opacity: 0;
+  transform: translateY(32px);
+  filter: blur(6px);
+  transition: transform 560ms var(--ease-out), opacity 560ms var(--ease-out), filter 560ms var(--ease-out);
+  will-change: transform, opacity, filter;
+}
+
+.sectionHeader.visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
 }
 
 .sectionTitle {
@@ -134,14 +235,41 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  transition: transform 180ms ease, border-color 180ms ease, filter 180ms ease;
+  /* Default hidden state for cards */
+  opacity: 0;
+  transform: translateY(40px);
+  filter: blur(6px);
+  will-change: transform, opacity, filter;
+  transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out), filter 700ms var(--ease-out), border-color 180ms ease;
 }
 
 .featureCard:hover {
   transform: translateY(-2px);
   border-color: color-mix(in srgb, var(--border) 55%, var(--ring));
-  filter: brightness(1.03);
+  filter: brightness(1.06);
 }
+
+/* Per-card visible state controlled via JS-visible class to enable replays */
+.featureCard.cardVisible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+  transition-delay: calc(var(--stagger, 0) * 120ms);
+}
+
+/* Also allow parent container to drive card visibility for DOM-based toggling */
+.featureGrid.visible .featureCard {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+  transition-delay: calc(var(--stagger, 0) * 120ms);
+}
+
+/* Explicit per-card stagger as a reliable fallback */
+.featureGrid.visible .featureCard:nth-child(1) { transition-delay: 0ms; }
+.featureGrid.visible .featureCard:nth-child(2) { transition-delay: 120ms; }
+.featureGrid.visible .featureCard:nth-child(3) { transition-delay: 240ms; }
+.featureGrid.visible .featureCard:nth-child(4) { transition-delay: 360ms; }
 
 .featureIcon {
   width: 44px;
@@ -173,6 +301,7 @@
   border-top: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg) 85%, transparent);
   backdrop-filter: blur(10px);
+  scroll-snap-align: end;
 }
 
 .footerInner {
@@ -181,6 +310,18 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  /* Default hidden state for scroll reveals */
+  opacity: 0;
+  transform: translateY(80px);
+  filter: blur(10px);
+  transition: transform 560ms var(--ease-out), opacity 560ms var(--ease-out), filter 560ms var(--ease-out);
+  will-change: transform, opacity, filter;
+}
+
+.footerInner.visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
 }
 
 .footerBrand {
@@ -210,6 +351,10 @@
   .featureGrid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .featuresSection {
+    display: block;
+  }
 }
 
 @media (max-height: 760px) and (min-width: 981px) {
@@ -238,5 +383,36 @@
   .footerInner {
     flex-direction: column;
     justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landingCinematic:not(.landingIntro) .heroTitle,
+  .landingCinematic:not(.landingIntro) .heroKicker,
+  .landingCinematic:not(.landingIntro) .heroSubtitle,
+  .landingCinematic:not(.landingIntro) .heroStats,
+  .landingCinematic:not(.landingIntro) .heroCta {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  .landingCinematic.landingIntro .heroTitle,
+  .landingCinematic.landingIntro .heroTitleGradient,
+  .landingCinematic.landingIntro .heroKicker,
+  .landingCinematic.landingIntro .heroSubtitle,
+  .landingCinematic.landingIntro .heroStats,
+  .landingCinematic.landingIntro .heroCta {
+    animation: none;
+  }
+
+  .landingCinematic [data-reveal] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  .landingCinematic [data-reveal].is-revealed {
+    animation: none;
   }
 }

@@ -1,10 +1,14 @@
 import './LandingPage.css'
 
 import UploadCard from '../components/UploadCard'
+import { useEffect, useRef, useState } from 'react'
 
-function FeatureCard({ icon, title, description }) {
+function FeatureCard({ icon, title, description, index }) {
   return (
-    <article className="featureCard">
+    <article
+      className="featureCard"
+      style={{ '--stagger': index }}
+    >
       <div className="featureIcon" aria-hidden="true">
         {icon}
       </div>
@@ -15,8 +19,157 @@ function FeatureCard({ icon, title, description }) {
 }
 
 export default function LandingPage(props) {
+  const landingRef = useRef(null)
+  const [animateIntro, setAnimateIntro] = useState(false)
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.add('landingScrollSnap')
+    return () => {
+      root.classList.remove('landingScrollSnap')
+    }
+  }, [])
+
+  useEffect(() => {
+    // Delay animation trigger to ensure browser paints initial hidden state first.
+    // This ensures animations work correctly on every page load and browser refresh.
+    const timeoutId = setTimeout(() => {
+      setAnimateIntro(true)
+    }, 150)
+
+    return () => clearTimeout(timeoutId)
+  }, [])
+
+  // Observe generic reveals (headers/footer) but exclude the feature cards group
+  useEffect(() => {
+    const root = landingRef.current
+    if (!root) return
+
+    const targets = root.querySelectorAll('[data-reveal]:not([data-reveal="cards"])')
+    if (!targets.length) return
+
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+      for (const el of targets) el.classList.add('visible')
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible')
+          } else {
+            entry.target.classList.remove('visible')
+          }
+        }
+      },
+      { threshold: 0.25, rootMargin: '0px 0px -8% 0px' },
+    )
+
+    for (const el of targets) observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // Dedicated observer for features section to force-reset and replay animations
+  const featuresRef = useRef(null)
+  const [featuresVisible, setFeaturesVisible] = useState(false)
+
+  useEffect(() => {
+    const el = featuresRef.current
+    if (!el) return
+
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+      // Make visible for reduced motion
+      el.classList.add('visible')
+      const sectionEl = el.closest('.featuresSection')
+      if (sectionEl) sectionEl.classList.add('revealActive')
+      return
+    }
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const grid = entry.target
+          const sectionEl = grid.closest('.featuresSection')
+          if (entry.isIntersecting) {
+            // Remove then re-add classes to force a reflow and replay transitions
+            grid.classList.remove('visible')
+            if (sectionEl) sectionEl.classList.remove('revealActive')
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                grid.classList.add('visible')
+                if (sectionEl) sectionEl.classList.add('revealActive')
+              })
+            })
+          } else {
+            grid.classList.remove('visible')
+            if (sectionEl) sectionEl.classList.remove('revealActive')
+          }
+        }
+      },
+      { threshold: 0.25, rootMargin: '0px 0px -8% 0px' },
+    )
+
+    obs.observe(el)
+
+    // immediate check on mount
+    const rect = el.getBoundingClientRect()
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      el.classList.remove('visible')
+      const sectionEl = el.closest('.featuresSection')
+      if (sectionEl) sectionEl.classList.remove('revealActive')
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          el.classList.add('visible')
+          if (sectionEl) sectionEl.classList.add('revealActive')
+        })
+      })
+    }
+
+    return () => obs.disconnect()
+  }, [])
+
+  // Fallback scroll listener to ensure replay works on all browsers/environments
+  useEffect(() => {
+    const grid = featuresRef.current
+    if (!grid) return
+
+    let ticking = false
+    const handler = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        const rect = grid.getBoundingClientRect()
+        const inView = rect.top < window.innerHeight && rect.bottom > 0
+        const sectionEl = grid.closest('.featuresSection')
+        if (inView) {
+          grid.classList.remove('visible')
+          if (sectionEl) sectionEl.classList.remove('revealActive')
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              grid.classList.add('visible')
+              if (sectionEl) sectionEl.classList.add('revealActive')
+            })
+          })
+        } else {
+          grid.classList.remove('visible')
+          if (sectionEl) sectionEl.classList.remove('revealActive')
+        }
+        ticking = false
+      })
+    }
+
+    window.addEventListener('scroll', handler, { passive: true })
+    // initial check
+    handler()
+    return () => window.removeEventListener('scroll', handler)
+  }, [])
+
   return (
-    <div className="landingRoot">
+    <div
+      ref={landingRef}
+      className={animateIntro ? 'landingRoot intro-loaded' : 'landingRoot'}
+    >
       <section className="heroSection">
         <div className="container heroGrid">
           <div className="heroCopy">
@@ -42,17 +195,21 @@ export default function LandingPage(props) {
         </div>
       </section>
 
-      <section className="featuresSection" aria-label="Features">
+      <section
+        className={"featuresSection" + (featuresVisible ? ' revealActive' : '')}
+        aria-label="Features"
+      >
         <div className="container">
-          <header className="sectionHeader">
+          <header className="sectionHeader" data-reveal="section">
             <h2 className="sectionTitle">Built for fast, temporary sharing</h2>
             <p className="sectionSubtitle">
               A clean flow from upload → link → download, with automatic expiry.
             </p>
           </header>
-
-          <div className="featureGrid">
+          <div ref={featuresRef} className="featureGrid" data-reveal="cards">
             <FeatureCard
+              index={0}
+              visible={featuresVisible}
               title="Temporary sharing"
               description="Generate a link and share it instantly. Links expire automatically."
               icon={
@@ -71,6 +228,8 @@ export default function LandingPage(props) {
             />
 
             <FeatureCard
+              index={1}
+              visible={featuresVisible}
               title="Auto-delete cleanup"
               description="Expired files are removed automatically so storage stays clean."
               icon={
@@ -84,6 +243,8 @@ export default function LandingPage(props) {
             />
 
             <FeatureCard
+              index={2}
+              visible={featuresVisible}
               title="Secure cloud uploads"
               description="Uploads go directly to S3 via a backend-generated presigned URL."
               icon={
@@ -102,6 +263,8 @@ export default function LandingPage(props) {
             />
 
             <FeatureCard
+              index={3}
+              visible={featuresVisible}
               title="Lightning-fast transfers"
               description="See real-time progress while your upload streams to the cloud."
               icon={
@@ -118,7 +281,7 @@ export default function LandingPage(props) {
       </section>
 
       <footer className="footer" aria-label="Footer">
-        <div className="container footerInner">
+        <div className="container footerInner" data-reveal="footer">
           <div className="footerBrand">Cloudrop</div>
           <div className="footerMeta">Built with AWS serverless architecture</div>
         </div>

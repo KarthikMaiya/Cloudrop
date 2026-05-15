@@ -42,6 +42,24 @@ body {
     var(--bg);
 }
 
+html.landingScrollSnap {
+  scroll-snap-type: y mandatory;
+  scroll-padding-top: 64px;
+  scroll-behavior: smooth;
+}
+
+@media (max-width: 980px) {
+  html.landingScrollSnap {
+    scroll-snap-type: y proximity;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.landingScrollSnap {
+    scroll-snap-type: none;
+  }
+}
+
 #root {
   min-height: 100svh;
 }
