@@ -13,13 +13,14 @@
 
   --shadow: 0 22px 48px rgba(0, 0, 0, 0.44);
 
-  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font-family: var(--sans);
   font-size: 16px;
-  line-height: 1.5;
-  letter-spacing: 0.2px;
+  line-height: 1.6;
+  letter-spacing: 0.3px;
+  font-weight: 400;
   color-scheme: dark;
   color: var(--text);
   background: var(--bg);
@@ -68,6 +69,7 @@ h1,
 h2 {
   margin: 0;
   font-weight: 600;
+  letter-spacing: -0.4px;
   color: var(--text-strong);
 }
 

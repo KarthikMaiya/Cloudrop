@@ -23,7 +23,8 @@
   gap: 10px;
   text-decoration: none;
   color: var(--text-strong);
-  letter-spacing: -0.2px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .navbarBrand:focus-visible {

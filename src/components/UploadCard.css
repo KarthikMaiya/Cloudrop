@@ -32,13 +32,17 @@
 .uploadTitle {
   margin: 0;
   font-size: 44px;
-  letter-spacing: -1px;
+  font-weight: 700;
+  letter-spacing: -1.2px;
   color: var(--text-strong);
 }
 
 .uploadSubtitle {
   margin: 10px 0 0;
   color: var(--text);
+  font-size: 14.5px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
 }
 
 .uploadCard {
@@ -115,6 +119,7 @@
 }
 
 .dropzonePrimary {
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-strong);
   letter-spacing: -0.2px;
@@ -124,6 +129,8 @@
   margin-top: 4px;
   color: var(--text);
   font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.1px;
 }
 
 .dropzoneLink {
@@ -253,40 +260,65 @@
 .helperText {
   margin: 0;
   text-align: center;
-  font-size: 13px;
+  font-size: 12.5px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
   color: var(--text-dim);
 }
 
 .expiryContainer {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .expiryLabel {
   font-size: 12px;
+  font-weight: 500;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.15em;
 }
 
 .expirySelect {
+  position: relative;
   height: 44px;
   border-radius: 14px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  background: var(--panel-2);
+  padding: 0 16px;
+  border: 1.5px solid var(--border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--panel-2) 70%, transparent),
+    color-mix(in srgb, var(--panel) 65%, transparent)
+  );
   color: var(--text-strong);
+  font-family: var(--sans);
   font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
   outline: none;
+  cursor: pointer;
+  transition: all 200ms ease;
+  appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23eef2ff" opacity="0.7"><path d="M6 9l6 6 6-6"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 20px;
+  padding-right: 40px;
+}
+
+.expirySelect:hover {
+  border-color: color-mix(in srgb, var(--border) 60%, var(--ring));
+  background-color: color-mix(in srgb, var(--panel-2) 75%, var(--ring-soft));
 }
 
 .expirySelect:focus-visible {
   border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent), inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .expirySelect:disabled {
-  opacity: 0.7;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -324,6 +356,8 @@
 .progressText {
   margin: 0;
   font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
   color: var(--text-dim);
   text-align: center;
 }
@@ -352,16 +386,17 @@
 
 .timerLabel {
   font-size: 11px;
+  font-weight: 600;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.15em;
 }
 
 .timerValue {
   font-size: 24px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-strong);
-  font-family: 'Menlo', 'Monaco', monospace;
+  font-family: 'Inter', var(--sans);
   letter-spacing: 0.05em;
 }
 
@@ -375,9 +410,10 @@
 
 .qrLabel {
   font-size: 11px;
+  font-weight: 600;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.15em;
   text-align: center;
 }
 
