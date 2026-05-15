@@ -2,6 +2,12 @@ import { useMemo, useRef, useState, useEffect } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import './UploadCard.css'
 
+const EXPIRY_OPTIONS = [
+  { value: 2, label: '2 Minutes' },
+  { value: 5, label: '5 Minutes' },
+  { value: 10, label: '10 Minutes' },
+]
+
 function formatFileName(file) {
   if (!file) return ''
   return file.name
@@ -24,9 +30,13 @@ export default function UploadCard({
   uploadError,
 }) {
   const fileInputRef = useRef(null)
+  const expiryMenuRef = useRef(null)
+  const expiryOptionRefs = useRef([])
   const [isDragActive, setIsDragActive] = useState(false)
   const [copyState, setCopyState] = useState('')
   const [now, setNow] = useState(0)
+  const [isExpiryOpen, setIsExpiryOpen] = useState(false)
+  const [expiryActiveIndex, setExpiryActiveIndex] = useState(0)
 
   useEffect(() => {
     if (!shareUrl || !expiresAt) return
@@ -50,6 +60,13 @@ export default function UploadCard({
     [selectedFile],
   )
 
+  const selectedExpiryIndex = useMemo(() => {
+    const index = EXPIRY_OPTIONS.findIndex((option) => option.value === expiryMinutes)
+    return index >= 0 ? index : 0
+  }, [expiryMinutes])
+
+  const selectedExpiryLabel = EXPIRY_OPTIONS[selectedExpiryIndex]?.label ?? '10 Minutes'
+
   const timeLeftLabel = useMemo(() => {
     if (!expiresAt || typeof expiresAt !== 'number') return 'Link expired'
     const remainingMs = expiresAt - now
@@ -63,6 +80,20 @@ export default function UploadCard({
   function acceptFile(file) {
     if (!file) return
     onFileSelected?.(file)
+  }
+
+  function closeExpiryMenu() {
+    setIsExpiryOpen(false)
+  }
+
+  function openExpiryMenu() {
+    setExpiryActiveIndex(selectedExpiryIndex)
+    setIsExpiryOpen(true)
+  }
+
+  function selectExpiry(optionValue) {
+    setExpiryMinutes(optionValue)
+    closeExpiryMenu()
   }
 
   function onBrowseClick() {
@@ -130,6 +161,92 @@ export default function UploadCard({
       const ok = document.execCommand('copy')
       document.body.removeChild(textarea)
       setCopyState(ok ? 'Copied!' : 'Copy failed')
+    }
+  }
+
+  useEffect(() => {
+    if (!isExpiryOpen) return undefined
+
+    function handlePointerDown(event) {
+      if (!expiryMenuRef.current?.contains(event.target)) {
+        closeExpiryMenu()
+      }
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        closeExpiryMenu()
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isExpiryOpen])
+
+  useEffect(() => {
+    if (!isExpiryOpen) return
+    expiryOptionRefs.current[expiryActiveIndex]?.focus()
+  }, [expiryActiveIndex, isExpiryOpen])
+
+  function handleExpiryButtonKeyDown(event) {
+    if (isUploading) return
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+
+      if (!isExpiryOpen) {
+        openExpiryMenu()
+        return
+      }
+
+      if (event.key === 'ArrowDown') {
+        setExpiryActiveIndex((current) => (current + 1) % EXPIRY_OPTIONS.length)
+      }
+
+      if (event.key === 'ArrowUp') {
+        setExpiryActiveIndex((current) => (current - 1 + EXPIRY_OPTIONS.length) % EXPIRY_OPTIONS.length)
+      }
+
+      if (event.key === 'Enter' || event.key === ' ') {
+        selectExpiry(EXPIRY_OPTIONS[expiryActiveIndex].value)
+      }
+    }
+  }
+
+  function handleExpiryOptionKeyDown(event, index) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setExpiryActiveIndex(() => (index + 1) % EXPIRY_OPTIONS.length)
+      return
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setExpiryActiveIndex(() => (index - 1 + EXPIRY_OPTIONS.length) % EXPIRY_OPTIONS.length)
+      return
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault()
+      setExpiryActiveIndex(0)
+      return
+    }
+
+    if (event.key === 'End') {
+      event.preventDefault()
+      setExpiryActiveIndex(EXPIRY_OPTIONS.length - 1)
+      return
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      selectExpiry(EXPIRY_OPTIONS[index].value)
     }
   }
 
@@ -238,22 +355,65 @@ export default function UploadCard({
         </label>
 
         <div className="expiryContainer">
-          <label className="expiryLabel" htmlFor="expiryMinutes">
-            Expiry
-          </label>
-          <select
-            id="expiryMinutes"
-            className="expirySelect"
-            value={expiryMinutes}
-            onChange={(e) =>
-              setExpiryMinutes(Number(e.target.value))
-            }
-            disabled={isUploading}
-          >
-            <option value={2}>2 Minutes</option>
-            <option value={5}>5 Minutes</option>
-            <option value={10}>10 Minutes</option>
-          </select>
+          <span className="expiryLabel">Expiry</span>
+
+          <div className="expiryDropdown" ref={expiryMenuRef}>
+            <button
+              className={isExpiryOpen ? 'expiryTrigger expiryTriggerOpen' : 'expiryTrigger'}
+              type="button"
+              onClick={() => (isExpiryOpen ? closeExpiryMenu() : openExpiryMenu())}
+              onKeyDown={handleExpiryButtonKeyDown}
+              disabled={isUploading}
+              aria-haspopup="listbox"
+              aria-expanded={isExpiryOpen}
+              aria-label="Select link expiry"
+            >
+              <span className="expiryTriggerValue">{selectedExpiryLabel}</span>
+              <span className="expiryTriggerIcon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path
+                    d="M6 9l6 6 6-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            </button>
+
+            <div
+              className={isExpiryOpen ? 'expiryMenu expiryMenuOpen' : 'expiryMenu'}
+              role="listbox"
+              aria-label="Expiry options"
+            >
+              {EXPIRY_OPTIONS.map((option, index) => {
+                const isSelected = option.value === expiryMinutes
+                const isActive = index === expiryActiveIndex
+
+                return (
+                  <button
+                    key={option.value}
+                    ref={(element) => {
+                      expiryOptionRefs.current[index] = element
+                    }}
+                    type="button"
+                    className={isSelected ? 'expiryOption expiryOptionSelected' : 'expiryOption'}
+                    role="option"
+                    aria-selected={isSelected}
+                    data-active={isActive ? 'true' : 'false'}
+                    tabIndex={isExpiryOpen ? 0 : -1}
+                    onClick={() => selectExpiry(option.value)}
+                    onKeyDown={(event) => handleExpiryOptionKeyDown(event, index)}
+                  >
+                    <span>{option.label}</span>
+                    {isSelected ? <span className="expiryOptionCheck" aria-hidden="true">✓</span> : null}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
           <p className="helperText">Files will be permanently deleted after expiry.</p>
         </div>

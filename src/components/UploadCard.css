@@ -280,46 +280,174 @@
   letter-spacing: 0.15em;
 }
 
-.expirySelect {
+.expiryDropdown {
   position: relative;
-  height: 44px;
+  width: 100%;
+}
+
+.expiryTrigger {
+  width: 100%;
+  min-height: 46px;
   border-radius: 14px;
-  padding: 0 16px;
-  border: 1.5px solid var(--border);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--panel-2) 70%, transparent),
-    color-mix(in srgb, var(--panel) 65%, transparent)
-  );
+  padding: 0 14px 0 16px;
+  border: 1.5px solid color-mix(in srgb, var(--border) 82%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel-2) 84%, transparent), color-mix(in srgb, var(--panel) 70%, transparent));
   color: var(--text-strong);
   font-family: var(--sans);
   font-size: 15px;
   font-weight: 500;
-  letter-spacing: 0.2px;
-  outline: none;
+  letter-spacing: 0.15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   cursor: pointer;
-  transition: all 200ms ease;
-  appearance: none;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23eef2ff" opacity="0.7"><path d="M6 9l6 6 6-6"/></svg>');
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 20px;
-  padding-right: 40px;
+  outline: none;
+  backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 22px rgba(0, 0, 0, 0.14);
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease,
+    background 200ms ease;
 }
 
-.expirySelect:hover {
+.expiryTrigger:hover {
   border-color: color-mix(in srgb, var(--border) 60%, var(--ring));
-  background-color: color-mix(in srgb, var(--panel-2) 75%, var(--ring-soft));
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ring-soft) 60%, transparent),
+    0 14px 28px rgba(0, 0, 0, 0.18);
 }
 
-.expirySelect:focus-visible {
+.expiryTrigger:focus-visible,
+.expiryTriggerOpen {
   border-color: var(--ring);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent), inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--ring) 18%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--ring-soft) 55%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.expirySelect:disabled {
-  opacity: 0.5;
+.expiryTrigger:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.expiryTriggerValue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.expiryTriggerIcon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: color-mix(in srgb, var(--text) 82%, var(--text-strong));
+  transition: transform 220ms ease, color 220ms ease;
+}
+
+.expiryTriggerIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.expiryTriggerOpen .expiryTriggerIcon {
+  transform: rotate(180deg);
+  color: var(--text-strong);
+}
+
+.expiryMenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 100%;
+  padding: 8px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, var(--ring-soft));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, transparent), color-mix(in srgb, var(--panel-2) 92%, transparent));
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 24px 42px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  z-index: 20;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  pointer-events: none;
+  transform-origin: top;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.expiryMenuOpen {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.expiryOption {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  margin: 0;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  outline: none;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.expiryOption:hover,
+.expiryOption[data-active='true'] {
+  background: color-mix(in srgb, var(--ring-soft) 35%, transparent);
+  color: var(--text-strong);
+  transform: translateX(1px);
+}
+
+.expiryOptionSelected {
+  background: color-mix(in srgb, var(--ring-soft) 46%, transparent);
+  color: var(--text-strong);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ring) 28%, transparent);
+}
+
+.expiryOption + .expiryOption {
+  margin-top: 4px;
+}
+
+.expiryOptionCheck {
+  color: color-mix(in srgb, var(--ring) 70%, var(--text-strong));
+  font-size: 12px;
+}
+
+.expiryOption:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ring) 34%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--ring) 16%, transparent);
+}
 }
 
 .progressWrapper {
