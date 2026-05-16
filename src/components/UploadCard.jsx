@@ -13,10 +13,25 @@ function formatFileName(file) {
   return file.name
 }
 
+function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB']
+  let value = bytes
+  let unitIndex = 0
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024
+    unitIndex += 1
+  }
+
+  const precision = value >= 10 || unitIndex === 0 ? 0 : 1
+  return `${value.toFixed(precision)} ${units[unitIndex]}`
+}
+
 export default function UploadCard({
   layout = 'standalone',
-  selectedFile,
-  onFileSelected,
+  selectedFiles,
+  onFilesSelected,
   customLink,
   onCustomLinkChange,
   expiryMinutes,
@@ -37,6 +52,10 @@ export default function UploadCard({
   const [now, setNow] = useState(0)
   const [isExpiryOpen, setIsExpiryOpen] = useState(false)
   const [expiryActiveIndex, setExpiryActiveIndex] = useState(0)
+  const safeSelectedFiles = useMemo(
+    () => (Array.isArray(selectedFiles) ? selectedFiles : []),
+    [selectedFiles],
+  )
 
   useEffect(() => {
     if (!shareUrl || !expiresAt) return
@@ -55,10 +74,23 @@ export default function UploadCard({
     }
   }, [shareUrl, expiresAt])
 
-  const selectedFileName = useMemo(
-    () => formatFileName(selectedFile),
-    [selectedFile],
-  )
+  const selectedFileSummary = useMemo(() => {
+    if (!safeSelectedFiles.length) return 'No files selected'
+    if (safeSelectedFiles.length === 1) return formatFileName(safeSelectedFiles[0])
+    return `${formatFileName(safeSelectedFiles[0])} + ${safeSelectedFiles.length - 1} more`
+  }, [safeSelectedFiles])
+
+  const selectedFileCountLabel = useMemo(() => {
+    if (!safeSelectedFiles.length) return 'No files selected'
+    if (safeSelectedFiles.length === 1) return '1 file selected'
+    return `${safeSelectedFiles.length} files selected`
+  }, [safeSelectedFiles])
+
+  const selectedTotalSizeLabel = useMemo(() => {
+    if (!safeSelectedFiles.length) return '0 B total'
+    const total = safeSelectedFiles.reduce((acc, current) => acc + (current?.size || 0), 0)
+    return `${formatFileSize(total)} total`
+  }, [safeSelectedFiles])
 
   const selectedExpiryIndex = useMemo(() => {
     const index = EXPIRY_OPTIONS.findIndex((option) => option.value === expiryMinutes)
@@ -77,9 +109,9 @@ export default function UploadCard({
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
   }, [expiresAt, now])
 
-  function acceptFile(file) {
-    if (!file) return
-    onFileSelected?.(file)
+  function acceptFiles(fileListLike) {
+    const files = Array.from(fileListLike || []).filter(Boolean)
+    onFilesSelected?.(files)
   }
 
   function closeExpiryMenu() {
@@ -102,8 +134,8 @@ export default function UploadCard({
   }
 
   function onFileInputChange(event) {
-    const file = event.target.files?.[0] ?? null
-    acceptFile(file)
+    const files = event.target.files || []
+    acceptFiles(files)
   }
 
   function onDragEnter(event) {
@@ -131,8 +163,8 @@ export default function UploadCard({
     event.stopPropagation()
     setIsDragActive(false)
 
-    const file = event.dataTransfer.files?.[0] ?? null
-    acceptFile(file)
+    const files = event.dataTransfer.files || []
+    acceptFiles(files)
   }
 
   async function handleSubmit(event) {
@@ -281,7 +313,7 @@ export default function UploadCard({
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') onBrowseClick()
           }}
-          aria-label="Drag and drop a file to upload"
+          aria-label="Drag and drop files to upload"
         >
           <div className="dropzoneIcon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false">
@@ -303,7 +335,7 @@ export default function UploadCard({
 
           <div className="dropzoneText">
             <div className="dropzonePrimary">
-              Drag & drop your file here
+              Drag & drop your files here
             </div>
             <div className="dropzoneSecondary">
               or <span className="dropzoneLink">browse</span> to select
@@ -315,17 +347,36 @@ export default function UploadCard({
           ref={fileInputRef}
           className="fileInput"
           type="file"
+          multiple
           hidden
           onChange={onFileInputChange}
           aria-label="File upload input"
         />
 
         <div className="fieldRow" aria-live="polite">
-          <div className="fieldLabel">Selected file</div>
-          <div className={selectedFile ? 'filePill' : 'filePill filePillEmpty'}>
-            {selectedFile ? selectedFileName : 'No file selected'}
+          <div className="fieldLabel">Selected files</div>
+          <div className={safeSelectedFiles.length ? 'filePill' : 'filePill filePillEmpty'}>
+            {selectedFileSummary}
           </div>
         </div>
+
+        {safeSelectedFiles.length ? (
+          <div className="filePreview" aria-live="polite">
+            <div className="filePreviewHeader">
+              <span className="filePreviewCount">{selectedFileCountLabel}</span>
+              <span className="filePreviewSize">{selectedTotalSizeLabel}</span>
+            </div>
+
+            <ul className="filePreviewList" aria-label="Selected files">
+              {safeSelectedFiles.map((file) => (
+                <li key={`${file.name}-${file.size}-${file.lastModified}`} className="filePreviewItem">
+                  <span className="filePreviewName" title={file.name}>{file.name}</span>
+                  <span className="filePreviewMeta">{formatFileSize(file.size)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         <label className="field">
           <span className="fieldLabel">Custom link</span>
@@ -421,7 +472,7 @@ export default function UploadCard({
         <button
           className="uploadButton"
           type="submit"
-          disabled={!selectedFile || isUploading}
+          disabled={!safeSelectedFiles.length || isUploading}
         >
           {isUploading ? 'Uploading...' : 'Upload'}
         </button>

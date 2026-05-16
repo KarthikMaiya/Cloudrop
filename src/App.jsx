@@ -13,7 +13,7 @@ import { useState } from 'react'
 
 function App() {
   // File + link state live in App so the upload flow is easy to follow.
-  const [selectedFile, setSelectedFile] = useState(null)
+  const [selectedFiles, setSelectedFiles] = useState([])
   const [customLink, setCustomLink] = useState('')
   // expiryMinutes must remain a plain number
   const [expiryMinutes, setExpiryMinutes] = useState(10)
@@ -32,8 +32,8 @@ function App() {
     setExpiresAt(null)
     setUploadProgress(0)
 
-    if (!selectedFile) {
-      alert('Please select a file first.')
+    if (!selectedFiles.length) {
+      alert('Please select at least one file first.')
       return
     }
 
@@ -54,29 +54,51 @@ function App() {
     setIsUploading(true)
     setUploadStatus('Preparing upload...')
     try {
-      const fileUrl = await uploadFile({
-        file: selectedFile,
-        linkId,
-        onProgress: (progress) => {
-          setUploadProgress(progress)
-          setUploadStatus(`Uploading... ${progress}%`)
-        },
-      })
+      const uploadedFiles = []
+      const totalFiles = selectedFiles.length
+
+      for (let index = 0; index < totalFiles; index += 1) {
+        const currentFile = selectedFiles[index]
+
+        const fileUrl = await uploadFile({
+          file: currentFile,
+          linkId,
+          onProgress: (progress) => {
+            const weightedProgress = Math.round(((index + progress / 100) / totalFiles) * 100)
+            setUploadProgress(weightedProgress)
+            setUploadStatus(`Uploading ${index + 1}/${totalFiles}: ${currentFile.name} (${progress}%)`)
+          },
+        })
+
+        uploadedFiles.push({
+          fileName: currentFile.name,
+          fileUrl,
+        })
+      }
+
+      const primaryFile = selectedFiles[0]
+      const primaryUpload = uploadedFiles[0]
+
+      if (!primaryFile || !primaryUpload) {
+        throw new Error('No uploaded file metadata available.')
+      }
 
       setUploadStatus('Finalizing link...')
 
       // Save metadata through API Gateway → Lambda → DynamoDB.
       await saveLink({
         linkId,
-        fileUrl,
-        fileName: selectedFile.name,
+        fileUrl: primaryUpload.fileUrl,
+        fileName: primaryFile.name,
         expiryMinutes,
       })
 
       const metadata = {
         linkId,
-        fileName: selectedFile.name,
-        url: fileUrl,
+        fileName: primaryFile.name,
+        url: primaryUpload.fileUrl,
+        files: uploadedFiles,
+        fileCount: uploadedFiles.length,
         expiresAt: expiresAtTime,
         createdAt: Date.now(),
       }
@@ -101,9 +123,10 @@ function App() {
     }
   }
 
-  function handleFileSelected(file) {
-    setSelectedFile(file)
+  function handleFilesSelected(files) {
+    setSelectedFiles(Array.isArray(files) ? files : [])
     setShareUrl('')
+    setExpiresAt(null)
     setUploadError('')
     setUploadProgress(0)
     setUploadStatus('')
@@ -129,8 +152,8 @@ function App() {
               path="/"
               element={
                 <LandingPage
-                  selectedFile={selectedFile}
-                  onFileSelected={handleFileSelected}
+                  selectedFiles={selectedFiles}
+                  onFilesSelected={handleFilesSelected}
                   customLink={customLink}
                   onCustomLinkChange={handleCustomLinkChange}
                   expiryMinutes={expiryMinutes}
