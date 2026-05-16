@@ -49,6 +49,9 @@ Deploying to Vercel
 2. In your Vercel project settings, add the environment variable `VITE_API_URL` with your API base URL.
 3. Deploy — Vercel will run the build and serve the static site.
 
+Note: If you update frontend code directly in the repository, trigger a fresh deploy
+in Vercel (or push a version bump) to ensure the latest client bundle is served.
+
 Security checklist (pre-deploy)
 
 - Ensure `.env` is excluded from git and contains no committed secrets.
