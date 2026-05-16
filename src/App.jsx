@@ -2,6 +2,7 @@ import './App.css'
 
 import Navbar from './components/Navbar'
 import { uploadFile } from './utils/uploadFile'
+import { createZip } from './utils/createZip'
 import DownloadPage from './pages/DownloadPage'
 import LandingPage from './pages/LandingPage'
 import { Routes, Route } from 'react-router-dom'
@@ -52,56 +53,59 @@ function App() {
     const expiresAtTime = Date.now() + expiryMinutes * 60 * 1000
 
     setIsUploading(true)
-    setUploadStatus('Preparing upload...')
+    setUploadStatus('Preparing ZIP archive...')
     try {
-      const uploadedFiles = []
-      const totalFiles = selectedFiles.length
+      // Prepare entries metadata for ZIP and metadata storage
+      const entries = selectedFiles.map((entry) => (entry && entry.file ? entry : { file: entry, name: entry.name, size: entry.size, relativePath: entry.webkitRelativePath || entry.name }))
 
-      for (let index = 0; index < totalFiles; index += 1) {
-        const currentEntry = selectedFiles[index]
-        const sourceFile = currentEntry && currentEntry.file ? currentEntry.file : currentEntry
-        const entryName = (currentEntry && currentEntry.name) || (sourceFile && sourceFile.name) || `file-${index + 1}`
-        const entryPath = (currentEntry && currentEntry.relativePath) || entryName
-
-        const fileUrl = await uploadFile({
-          file: sourceFile,
-          linkId,
-          onProgress: (progress) => {
-            const weightedProgress = Math.round(((index + progress / 100) / totalFiles) * 100)
-            setUploadProgress(weightedProgress)
-            setUploadStatus(`Uploading ${index + 1}/${totalFiles}: ${entryName} (${progress}%)`)
-          },
-        })
-
-        uploadedFiles.push({
-          fileName: entryName,
-          relativePath: entryPath,
-          size: (currentEntry && currentEntry.size) || (sourceFile && sourceFile.size) || 0,
-          fileUrl,
-        })
+      const totalSize = entries.reduce((acc, e) => acc + ((e && e.size) || (e.file && e.file.size) || 0), 0)
+      if (totalSize > 300 * 1024 * 1024) {
+        setUploadStatus('Large archive detected — this may take a while')
       }
 
-      const primaryFile = selectedFiles[0]
-      const primaryUpload = uploadedFiles[0]
+      // Create ZIP in browser with progress
+      setUploadStatus('Compressing files...')
+      const zipBlob = await createZip(entries, {
+        onProgress: (p) => {
+          setUploadProgress(p)
+          setUploadStatus(`Compressing... ${p}%`)
+        },
+      })
 
-      if (!primaryFile || !primaryUpload) {
-        throw new Error('No uploaded file metadata available.')
-      }
+      const zipFileName = `${linkId || customLink || 'cloudrop-files'}.zip`
+      const zipFile = new File([zipBlob], zipFileName, { type: 'application/zip' })
 
-      setUploadStatus('Finalizing link...')
+      setUploadStatus('Uploading archive...')
+
+      // Upload the single ZIP file to S3
+      const zipUrl = await uploadFile({
+        file: zipFile,
+        linkId,
+        onProgress: (progress) => {
+          setUploadProgress(progress)
+          setUploadStatus(`Uploading archive... ${progress}%`)
+        },
+      })
+
+      // Prepare stored metadata about original entries
+      const uploadedFiles = entries.map((e) => ({
+        fileName: e.name || (e.file && e.file.name) || '',
+        relativePath: e.relativePath || (e.file && e.file.webkitRelativePath) || (e.file && e.file.name) || '',
+        size: e.size || (e.file && e.file.size) || 0,
+      }))
 
       // Save metadata through API Gateway → Lambda → DynamoDB.
       await saveLink({
         linkId,
-        fileUrl: primaryUpload.fileUrl,
-        fileName: primaryUpload.fileName,
+        fileUrl: zipUrl,
+        fileName: zipFileName,
         expiryMinutes,
       })
 
       const metadata = {
         linkId,
-        fileName: primaryUpload.fileName,
-        url: primaryUpload.fileUrl,
+        fileName: zipFileName,
+        url: zipUrl,
         files: uploadedFiles,
         fileCount: uploadedFiles.length,
         expiresAt: expiresAtTime,
