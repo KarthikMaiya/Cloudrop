@@ -110,8 +110,24 @@ export default function UploadCard({
   }, [expiresAt, now])
 
   function acceptFiles(fileListLike) {
-    const files = Array.from(fileListLike || []).filter(Boolean)
-    onFilesSelected?.(files)
+    const rawFiles = Array.from(fileListLike || []).filter(Boolean)
+
+    const normalized = rawFiles.map((f) => {
+      // If already a metadata object produced by directory traversal
+      if (f && f.file) return f
+
+      // File from input or drop: preserve webkitRelativePath when available
+      const fileObj = f
+      return {
+        file: fileObj,
+        name: fileObj.name,
+        size: fileObj.size,
+        type: fileObj.type,
+        relativePath: fileObj.webkitRelativePath || fileObj.name,
+      }
+    })
+
+    onFilesSelected?.(normalized)
   }
 
   function closeExpiryMenu() {
@@ -163,8 +179,79 @@ export default function UploadCard({
     event.stopPropagation()
     setIsDragActive(false)
 
-    const files = event.dataTransfer.files || []
-    acceptFiles(files)
+    // Try to extract files preserving relative paths for folders
+    async function extract() {
+      const dt = event.dataTransfer
+      if (dt && dt.items && dt.items.length) {
+        try {
+          const extracted = await filesFromDataTransferItems(dt.items)
+          acceptFiles(extracted)
+          return
+        } catch {
+          // Fallback to files list
+        }
+      }
+
+      const files = dt.files || []
+      acceptFiles(files)
+    }
+
+    void extract()
+  }
+
+  // Helpers to traverse DataTransferItemList and preserve directory structure
+  function fileEntryToPromise(entry, path = '') {
+    return new Promise((resolve, reject) => {
+      if (entry.isFile) {
+        entry.file((file) => {
+          // Attach relativePath for later normalization
+          file.relativePath = path + file.name
+          resolve(file)
+        }, reject)
+      } else if (entry.isDirectory) {
+        const dirReader = entry.createReader()
+        const entries = []
+
+        const readEntries = () => {
+          dirReader.readEntries((results) => {
+            if (!results.length) {
+              // resolve when no more entries
+              Promise.all(entries.map((e) => fileEntryToPromise(e, path + entry.name + '/')))
+                .then((arrs) => resolve(arrs.flat()))
+                .catch(reject)
+              return
+            }
+            entries.push(...results)
+            readEntries()
+          }, reject)
+        }
+
+        readEntries()
+      } else {
+        resolve([])
+      }
+    })
+  }
+
+  async function filesFromDataTransferItems(items) {
+    const files = []
+    const promises = []
+    for (let i = 0; i < items.length; i += 1) {
+      const item = items[i]
+      if (!item) continue
+      const entry = item.webkitGetAsEntry && item.webkitGetAsEntry()
+      if (entry) {
+        promises.push(
+          fileEntryToPromise(entry).then((res) => {
+            if (Array.isArray(res)) files.push(...res)
+            else if (res) files.push(res)
+          }),
+        )
+      }
+    }
+
+    await Promise.all(promises)
+    return files
   }
 
   async function handleSubmit(event) {

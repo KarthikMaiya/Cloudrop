@@ -58,20 +58,25 @@ function App() {
       const totalFiles = selectedFiles.length
 
       for (let index = 0; index < totalFiles; index += 1) {
-        const currentFile = selectedFiles[index]
+        const currentEntry = selectedFiles[index]
+        const sourceFile = currentEntry && currentEntry.file ? currentEntry.file : currentEntry
+        const entryName = (currentEntry && currentEntry.name) || (sourceFile && sourceFile.name) || `file-${index + 1}`
+        const entryPath = (currentEntry && currentEntry.relativePath) || entryName
 
         const fileUrl = await uploadFile({
-          file: currentFile,
+          file: sourceFile,
           linkId,
           onProgress: (progress) => {
             const weightedProgress = Math.round(((index + progress / 100) / totalFiles) * 100)
             setUploadProgress(weightedProgress)
-            setUploadStatus(`Uploading ${index + 1}/${totalFiles}: ${currentFile.name} (${progress}%)`)
+            setUploadStatus(`Uploading ${index + 1}/${totalFiles}: ${entryName} (${progress}%)`)
           },
         })
 
         uploadedFiles.push({
-          fileName: currentFile.name,
+          fileName: entryName,
+          relativePath: entryPath,
+          size: (currentEntry && currentEntry.size) || (sourceFile && sourceFile.size) || 0,
           fileUrl,
         })
       }
@@ -89,13 +94,13 @@ function App() {
       await saveLink({
         linkId,
         fileUrl: primaryUpload.fileUrl,
-        fileName: primaryFile.name,
+        fileName: primaryUpload.fileName,
         expiryMinutes,
       })
 
       const metadata = {
         linkId,
-        fileName: primaryFile.name,
+        fileName: primaryUpload.fileName,
         url: primaryUpload.fileUrl,
         files: uploadedFiles,
         fileCount: uploadedFiles.length,
