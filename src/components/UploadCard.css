@@ -448,7 +448,6 @@
     inset 0 0 0 1px color-mix(in srgb, var(--ring) 34%, transparent),
     0 0 0 3px color-mix(in srgb, var(--ring) 16%, transparent);
 }
-}
 
 .progressWrapper {
   display: flex;
