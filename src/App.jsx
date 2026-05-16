@@ -58,6 +58,21 @@ function App() {
       // Prepare entries metadata for ZIP and metadata storage
       const entries = selectedFiles.map((entry) => (entry && entry.file ? entry : { file: entry, name: entry.name, size: entry.size, relativePath: entry.webkitRelativePath || entry.name }))
 
+      console.log('FILES ARRAY:', entries)
+      console.log('FILES COUNT:', entries.length)
+      entries.forEach((entry) => {
+        console.log({
+          name: entry.name || entry.file?.name,
+          size: entry.size ?? entry.file?.size,
+          type: entry.type || entry.file?.type,
+          relativePath: entry.relativePath || entry.file?.webkitRelativePath,
+        })
+      })
+
+      if (!entries.length) {
+        throw new Error('No files were collected from the selected folder/files.')
+      }
+
       const totalSize = entries.reduce((acc, e) => acc + ((e && e.size) || (e.file && e.file.size) || 0), 0)
       if (totalSize > 300 * 1024 * 1024) {
         setUploadStatus('Large archive detected — this may take a while')
@@ -74,6 +89,16 @@ function App() {
 
       const zipFileName = `${linkId || customLink || 'cloudrop-files'}.zip`
       const zipFile = new File([zipBlob], zipFileName, { type: 'application/zip' })
+
+      if (!zipFile.size) {
+        throw new Error('ZIP archive is empty. Folder parsing may have failed.')
+      }
+
+      console.log({
+        zipName: zipFileName,
+        zipType: zipFile.type,
+        zipSize: zipFile.size,
+      })
 
       setUploadStatus('Uploading archive...')
 

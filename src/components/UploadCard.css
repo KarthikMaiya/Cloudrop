@@ -139,6 +139,71 @@
   text-underline-offset: 3px;
 }
 
+.uploadControls {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.uploadControlButton {
+  flex: 1;
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1.5px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--panel-2) 85%, transparent),
+    color-mix(in srgb, var(--panel) 70%, transparent)
+  );
+  color: var(--text-strong);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  outline: none;
+  transition: transform 180ms ease, filter 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.uploadControlButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  border-color: color-mix(in srgb, var(--border) 60%, var(--ring));
+}
+
+.uploadControlButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.uploadControlButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.uploadControlButton:focus-visible {
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--ring);
+}
+
+.uploadControlIcon {
+  font-size: 16px;
+}
+
+@media (max-width: 520px) {
+  .uploadControls {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .uploadControlButton {
+    width: 100%;
+  }
+}
+
 .fileInput {
   display: none;
 }

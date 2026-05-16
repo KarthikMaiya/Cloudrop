@@ -28,6 +28,121 @@ function formatFileSize(bytes) {
   return `${value.toFixed(precision)} ${units[unitIndex]}`
 }
 
+function normalizeFileEntry(item) {
+  if (!item) return null
+
+  if (item.file && item.relativePath) {
+    return {
+      file: item.file,
+      name: item.name || item.file.name,
+      size: item.size ?? item.file.size,
+      type: item.type || item.file.type,
+      relativePath: item.relativePath,
+    }
+  }
+
+  const fileObj = item
+  return {
+    file: fileObj,
+    name: fileObj.name,
+    size: fileObj.size,
+    type: fileObj.type,
+    relativePath: fileObj.webkitRelativePath || fileObj.relativePath || fileObj.name,
+  }
+}
+
+function readFileEntry(entry, basePath) {
+  return new Promise((resolve, reject) => {
+    entry.file(
+      (file) => {
+        const relativePath = `${basePath}${file.name}`
+        resolve({
+          file,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          relativePath,
+        })
+      },
+      reject,
+    )
+  })
+}
+
+function readAllDirectoryEntries(reader) {
+  return new Promise((resolve, reject) => {
+    const allEntries = []
+
+    function readBatch() {
+      reader.readEntries(
+        (entries) => {
+          if (!entries.length) {
+            resolve(allEntries)
+            return
+          }
+
+          allEntries.push(...entries)
+          readBatch()
+        },
+        reject,
+      )
+    }
+
+    readBatch()
+  })
+}
+
+async function readDirectory(entry, basePath = '') {
+  const nextPath = `${basePath}${entry.name}/`
+  const reader = entry.createReader()
+  const entries = await readAllDirectoryEntries(reader)
+  const files = []
+
+  for (const child of entries) {
+    const walked = await walkEntry(child, nextPath)
+    files.push(...walked)
+  }
+
+  return files
+}
+
+async function walkEntry(entry, basePath = '') {
+  if (entry.isFile) {
+    const fileEntry = await readFileEntry(entry, basePath)
+    return [fileEntry]
+  }
+
+  if (entry.isDirectory) {
+    return readDirectory(entry, basePath)
+  }
+
+  return []
+}
+
+async function filesFromDataTransferItems(items) {
+  const collected = []
+
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index]
+    if (!item) continue
+
+    const entry = item.webkitGetAsEntry?.()
+
+    if (entry) {
+      const walked = await walkEntry(entry)
+      collected.push(...walked)
+      continue
+    }
+
+    const file = item.getAsFile?.()
+    if (!file) continue
+    const normalized = normalizeFileEntry(file)
+    if (normalized) collected.push(normalized)
+  }
+
+  return collected
+}
+
 export default function UploadCard({
   layout = 'standalone',
   selectedFiles,
@@ -45,6 +160,7 @@ export default function UploadCard({
   uploadError,
 }) {
   const fileInputRef = useRef(null)
+  const folderInputRef = useRef(null)
   const expiryMenuRef = useRef(null)
   const expiryOptionRefs = useRef([])
   const [isDragActive, setIsDragActive] = useState(false)
@@ -109,25 +225,43 @@ export default function UploadCard({
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
   }, [expiresAt, now])
 
-  function acceptFiles(fileListLike) {
+  function mergeUniqueEntries(existing, incoming) {
+    const map = new Map()
+
+    for (const entry of existing) {
+      if (!entry) continue
+      const key = `${entry.relativePath}::${entry.size}::${entry.file?.lastModified ?? 0}`
+      map.set(key, entry)
+    }
+
+    for (const entry of incoming) {
+      if (!entry) continue
+      const key = `${entry.relativePath}::${entry.size}::${entry.file?.lastModified ?? 0}`
+      map.set(key, entry)
+    }
+
+    return Array.from(map.values())
+  }
+
+  function acceptFiles(fileListLike, { append = false } = {}) {
     const rawFiles = Array.from(fileListLike || []).filter(Boolean)
+    const normalized = rawFiles.map(normalizeFileEntry).filter(Boolean)
+    const nextSelection = append
+      ? mergeUniqueEntries(safeSelectedFiles, normalized)
+      : normalized
 
-    const normalized = rawFiles.map((f) => {
-      // If already a metadata object produced by directory traversal
-      if (f && f.file) return f
-
-      // File from input or drop: preserve webkitRelativePath when available
-      const fileObj = f
-      return {
-        file: fileObj,
-        name: fileObj.name,
-        size: fileObj.size,
-        type: fileObj.type,
-        relativePath: fileObj.webkitRelativePath || fileObj.name,
-      }
+    console.log('FILES ARRAY:', nextSelection)
+    console.log('FILES COUNT:', nextSelection.length)
+    nextSelection.forEach((entry) => {
+      console.log({
+        name: entry.name,
+        size: entry.size,
+        type: entry.type,
+        relativePath: entry.relativePath,
+      })
     })
 
-    onFilesSelected?.(normalized)
+    onFilesSelected?.(nextSelection)
   }
 
   function closeExpiryMenu() {
@@ -144,14 +278,26 @@ export default function UploadCard({
     closeExpiryMenu()
   }
 
-  function onBrowseClick() {
+  function onBrowseFilesClick() {
     if (typeof window === 'undefined') return
     fileInputRef.current?.click()
   }
 
+  function onBrowseFolderClick() {
+    if (typeof window === 'undefined') return
+    folderInputRef.current?.click()
+  }
+
   function onFileInputChange(event) {
     const files = event.target.files || []
-    acceptFiles(files)
+    acceptFiles(files, { append: true })
+    event.target.value = ''
+  }
+
+  function onFolderInputChange(event) {
+    const files = event.target.files || []
+    acceptFiles(files, { append: true })
+    event.target.value = ''
   }
 
   function onDragEnter(event) {
@@ -185,6 +331,7 @@ export default function UploadCard({
       if (dt && dt.items && dt.items.length) {
         try {
           const extracted = await filesFromDataTransferItems(dt.items)
+          console.log('DROP EXTRACTED COUNT:', extracted.length)
           acceptFiles(extracted)
           return
         } catch {
@@ -197,61 +344,6 @@ export default function UploadCard({
     }
 
     void extract()
-  }
-
-  // Helpers to traverse DataTransferItemList and preserve directory structure
-  function fileEntryToPromise(entry, path = '') {
-    return new Promise((resolve, reject) => {
-      if (entry.isFile) {
-        entry.file((file) => {
-          // Attach relativePath for later normalization
-          file.relativePath = path + file.name
-          resolve(file)
-        }, reject)
-      } else if (entry.isDirectory) {
-        const dirReader = entry.createReader()
-        const entries = []
-
-        const readEntries = () => {
-          dirReader.readEntries((results) => {
-            if (!results.length) {
-              // resolve when no more entries
-              Promise.all(entries.map((e) => fileEntryToPromise(e, path + entry.name + '/')))
-                .then((arrs) => resolve(arrs.flat()))
-                .catch(reject)
-              return
-            }
-            entries.push(...results)
-            readEntries()
-          }, reject)
-        }
-
-        readEntries()
-      } else {
-        resolve([])
-      }
-    })
-  }
-
-  async function filesFromDataTransferItems(items) {
-    const files = []
-    const promises = []
-    for (let i = 0; i < items.length; i += 1) {
-      const item = items[i]
-      if (!item) continue
-      const entry = item.webkitGetAsEntry && item.webkitGetAsEntry()
-      if (entry) {
-        promises.push(
-          fileEntryToPromise(entry).then((res) => {
-            if (Array.isArray(res)) files.push(...res)
-            else if (res) files.push(res)
-          }),
-        )
-      }
-    }
-
-    await Promise.all(promises)
-    return files
   }
 
   async function handleSubmit(event) {
@@ -394,13 +486,7 @@ export default function UploadCard({
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
-          role="button"
-          tabIndex={0}
-          onClick={onBrowseClick}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') onBrowseClick()
-          }}
-          aria-label="Drag and drop files to upload"
+          aria-label="Drag and drop your files and folders here"
         >
           <div className="dropzoneIcon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false">
@@ -422,12 +508,36 @@ export default function UploadCard({
 
           <div className="dropzoneText">
             <div className="dropzonePrimary">
-              Drag & drop your files here
+              Drag and drop your files and folders here
             </div>
             <div className="dropzoneSecondary">
-              or <span className="dropzoneLink">browse</span> to select
+              or use the buttons below to select
             </div>
           </div>
+        </div>
+
+        <div className="uploadControls">
+          <button
+            className="uploadControlButton uploadControlButtonFiles"
+            type="button"
+            onClick={onBrowseFilesClick}
+            disabled={isUploading}
+            aria-label="Browse and select files"
+          >
+            <span className="uploadControlIcon" aria-hidden="true">📄</span>
+            Upload Files
+          </button>
+
+          <button
+            className="uploadControlButton uploadControlButtonFolder"
+            type="button"
+            onClick={onBrowseFolderClick}
+            disabled={isUploading}
+            aria-label="Browse and select a folder"
+          >
+            <span className="uploadControlIcon" aria-hidden="true">📁</span>
+            Upload Folder
+          </button>
         </div>
 
         <input
@@ -438,6 +548,17 @@ export default function UploadCard({
           hidden
           onChange={onFileInputChange}
           aria-label="File upload input"
+        />
+
+        <input
+          ref={folderInputRef}
+          className="fileInput"
+          type="file"
+          multiple
+          webkitdirectory=""
+          hidden
+          onChange={onFolderInputChange}
+          aria-label="Folder upload input"
         />
 
         <div className="fieldRow" aria-live="polite">
@@ -456,7 +577,7 @@ export default function UploadCard({
 
             <ul className="filePreviewList" aria-label="Selected files">
               {safeSelectedFiles.map((file) => (
-                <li key={`${file.name}-${file.size}-${file.lastModified}`} className="filePreviewItem">
+                <li key={`${file.relativePath}-${file.size}-${file.file?.lastModified ?? 0}`} className="filePreviewItem">
                   <span className="filePreviewName" title={file.name}>{file.name}</span>
                   <span className="filePreviewMeta">{formatFileSize(file.size)}</span>
                 </li>

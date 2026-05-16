@@ -43,7 +43,7 @@ export async function uploadFile({ file, linkId, onProgress }) {
     throw new Error('Invalid response from generate-upload-url (missing uploadUrl/fileUrl).')
   }
 
-  // Upload file bytes to S3 using XMLHttpRequest so we can track progress.
+  // Upload file bytes to S3. XHR keeps progress events; error details are surfaced explicitly.
   await new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', uploadUrl)
@@ -59,17 +59,25 @@ export async function uploadFile({ file, linkId, onProgress }) {
       if (xhr.status >= 200 && xhr.status < 300) {
         if (typeof onProgress === 'function') onProgress(100)
         resolve(null)
-      } else {
-        reject(
-          new Error(
-            `S3 upload failed (${xhr.status}): ${xhr.responseText || xhr.statusText}`,
-          ),
-        )
+        return
       }
+
+      reject(
+        new Error(
+          `S3 upload failed (${xhr.status} ${xhr.statusText || 'Unknown status'}): ${xhr.responseText || 'No response body'}`,
+        ),
+      )
     }
 
-    xhr.onerror = () => reject(new Error('S3 upload failed (network error)'))
-    xhr.onabort = () => reject(new Error('S3 upload aborted'))
+    xhr.onerror = () => {
+      reject(
+        new Error(
+          `S3 upload failed (network error) for ${file.name} with content-type ${contentType}`,
+        ),
+      )
+    }
+
+    xhr.onabort = () => reject(new Error(`S3 upload aborted for ${file.name}`))
 
     xhr.send(file)
   })

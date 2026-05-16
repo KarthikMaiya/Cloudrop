@@ -11,6 +11,9 @@ export async function createZip(entries = [], { onProgress } = {}) {
     zip.file(safePath, file)
   }
 
+  console.log('ZIP ENTRIES:')
+  console.log(Object.keys(zip.files))
+
   const blob = await zip.generateAsync({ type: 'blob' }, (metadata) => {
     if (typeof onProgress === 'function') onProgress(Math.round(metadata.percent))
   })
