@@ -27,10 +27,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    gap: 32px;
-    padding-top: 120px;
-    padding-bottom: 56px;
+    justify-content: center;
+    gap: 20px;
+    padding-top: 24px;
+    padding-bottom: 24px;
   }
 
 .downloadBackdrop::before,
@@ -64,7 +64,7 @@
 }
 
 .downloadTitle {
-  font-size: clamp(48px, 8vw, 96px);
+  font-size: clamp(40px, 6vw, 76px);
   font-weight: 700;
   letter-spacing: -0.08em;
   color: var(--text-strong);
@@ -74,9 +74,9 @@
 }
 
 .downloadSubtitle {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   color: var(--text);
-  font-size: 15px;
+  font-size: 14px;
   letter-spacing: 0.18px;
 }
 
@@ -84,7 +84,7 @@
   position: relative;
   z-index: 2;
   width: min(720px, 100%);
-  padding: 26px;
+  padding: 20px;
   border-radius: 28px;
   border: 1px solid color-mix(in srgb, var(--border) 72%, var(--ring-soft));
   background:
@@ -95,7 +95,7 @@
   backdrop-filter: blur(18px);
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   transform: none;
   transform-style: flat;
   transition: box-shadow 300ms var(--ease-out), border-color 300ms var(--ease-out);
@@ -113,7 +113,7 @@
 }
 
 .downloadStateBlock {
-  min-height: 280px;
+  min-height: 220px;
   display: grid;
   place-items: center;
   border-radius: 22px;
@@ -137,14 +137,14 @@
 .downloadHero {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 18px;
+  gap: 14px;
   align-items: start;
 }
 
 .fileBadge {
-  width: 66px;
-  height: 66px;
-  border-radius: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
   display: grid;
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--ring) 32%, var(--border));
@@ -166,8 +166,8 @@
 }
 
 .fileBadge svg {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
 }
 
 .downloadHeroText {
@@ -185,7 +185,7 @@
 
 .fileName {
   margin: 0;
-  font-size: clamp(26px, 3vw, 36px);
+  font-size: clamp(22px, 2.6vw, 32px);
   line-height: 1.06;
   letter-spacing: -1px;
   color: var(--text-strong);
@@ -195,8 +195,8 @@
 .downloadMetaRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .downloadMetaRow span {
@@ -211,8 +211,8 @@
 .fileDetails {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .fileDetailItem {
@@ -232,7 +232,7 @@
 
 .expiryBlock {
   border-radius: 20px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   display: grid;
   gap: 6px;
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
@@ -262,7 +262,7 @@
 }
 
 .countdownDigits {
-  font-size: clamp(32px, 4vw, 44px);
+  font-size: clamp(28px, 3.4vw, 38px);
   font-weight: 800;
   letter-spacing: -1.2px;
   color: var(--text-strong);
@@ -289,14 +289,14 @@
 }
 
 .downloadButton {
-  min-height: 58px;
+  min-height: 52px;
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--ring) 50%, var(--border));
   background: linear-gradient(180deg, color-mix(in srgb, var(--ring) 34%, var(--panel)), color-mix(in srgb, var(--ring) 18%, var(--panel)));
   color: var(--text-strong);
   font-weight: 700;
   letter-spacing: -0.2px;
-  font-size: 16px;
+  font-size: 15px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -371,12 +371,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   padding-top: 2px;
 }
 
 .returnQuestion {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-strong);
 }
@@ -384,7 +384,7 @@
 .returnHint {
   margin-top: 4px;
   color: var(--text);
-  font-size: 13.5px;
+  font-size: 13px;
 }
 
 .returnButton {
@@ -437,9 +437,10 @@
 
   .downloadLayout {
     width: 100%;
-    gap: 24px;
-    padding-top: 88px;
-    padding-bottom: 32px;
+    gap: 18px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    justify-content: center;
   }
 
   .downloadHeader {
@@ -447,12 +448,12 @@
   }
 
   .downloadTitle {
-    font-size: clamp(42px, 13vw, 64px);
+    font-size: clamp(38px, 11vw, 54px);
   }
 
   .downloadCard {
-    padding: 20px;
-    border-radius: 24px;
+    padding: 18px;
+    border-radius: 22px;
   }
 
   .downloadHero {
@@ -460,13 +461,13 @@
   }
 
   .fileBadge {
-    width: 58px;
-    height: 58px;
+    width: 54px;
+    height: 54px;
   }
 
   .fileBadge svg {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
   }
 
   .fileDetails,
