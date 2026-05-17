@@ -1,6 +1,5 @@
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 const API_URL = `${API_BASE}/save-link`
-const REQUEST_TIMEOUT_MS = 15000
 
 // Validate API configuration at module load time
 if (!API_BASE) {
@@ -31,57 +30,44 @@ export async function saveLink({ linkId, fileUrl, fileName, expiryMinutes }) {
 
   console.debug('[saveLink] Endpoint:', API_URL)
   console.debug('[saveLink] Payload:', { linkId, fileName, expiryMinutes })
+  console.log('Creating request for /save-link')
+  console.log('Starting request')
 
-  const controller = new AbortController()
-  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      linkId,
+      fileUrl,
+      fileName,
+      expiryMinutes,
+    }),
+  })
 
-  try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        linkId,
-        fileUrl,
-        fileName,
-        expiryMinutes,
-      }),
-      signal: controller.signal,
-    })
+  console.log('Request completed')
 
-    const body = await readResponseBody(response)
-    console.debug('[saveLink] Response:', {
+  const body = await readResponseBody(response)
+  console.debug('[saveLink] Response:', {
+    status: response.status,
+    ok: response.ok,
+    endpoint: API_URL,
+    responseBody: body.text,
+  })
+
+  if (!response.ok) {
+    console.error('[saveLink] Failed response:', {
       status: response.status,
-      ok: response.ok,
+      statusText: response.statusText,
       endpoint: API_URL,
       responseBody: body.text,
     })
-
-    if (!response.ok) {
-      console.error('[saveLink] Failed response:', {
-        status: response.status,
-        statusText: response.statusText,
-        endpoint: API_URL,
-        responseBody: body.text,
-      })
-      throw new Error(
-        `saveLink failed (${response.status}): ${body.text || response.statusText}. Endpoint: ${API_URL}`,
-      )
-    }
-
-    // Some API Gateway/Lambda setups may not return JSON.
-    return body.data
-  } catch (error) {
-    if (error?.name === 'AbortError') {
-      throw new Error(
-        `saveLink timed out after ${REQUEST_TIMEOUT_MS / 1000} seconds. Endpoint: ${API_URL}`,
-        { cause: error },
-      )
-    }
-
-    throw error
-  } finally {
-    window.clearTimeout(timeoutId)
+    throw new Error(
+      `saveLink failed (${response.status}): ${body.text || response.statusText}. Endpoint: ${API_URL}`,
+    )
   }
+
+  // Some API Gateway/Lambda setups may not return JSON.
+  return body.data
 }

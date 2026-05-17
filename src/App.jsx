@@ -58,8 +58,10 @@ function App() {
 
     setIsUploading(true)
     setUploadStatus('Preparing ZIP archive...')
+    console.group('UPLOAD PIPELINE')
+    console.time('upload-pipeline')
     try {
-      console.log('1. Starting ZIP generation')
+      console.log(`[${new Date().toISOString()}] 1. Starting ZIP generation`)
       // Prepare entries metadata for ZIP and metadata storage
       const entries = selectedFiles.map((entry) => (entry && entry.file ? entry : { file: entry, name: entry.name, size: entry.size, relativePath: entry.webkitRelativePath || entry.name }))
 
@@ -91,7 +93,7 @@ function App() {
           setUploadStatus(`Compressing... ${p}%`)
         },
       })
-      console.log('2. ZIP generation complete')
+      console.log(`[${new Date().toISOString()}] 2. ZIP generation complete`)
 
       const zipFileName = `${linkId || customLink || 'cloudrop-files'}.zip`
       const zipFile = new File([zipBlob], zipFileName, { type: 'application/zip' })
@@ -107,7 +109,7 @@ function App() {
       })
 
       setUploadStatus('Uploading archive...')
-      console.log('3. Requesting upload URL')
+      console.log(`[${new Date().toISOString()}] 3. Requesting upload URL`)
 
       // Upload the single ZIP file to S3
       const zipUrl = await uploadFile({
@@ -128,14 +130,14 @@ function App() {
 
       // Save metadata through API Gateway → Lambda → DynamoDB.
       setUploadStatus('Saving metadata...')
-      console.log('7. Saving metadata')
+      console.log(`[${new Date().toISOString()}] 7. Saving metadata`)
       await saveLink({
         linkId,
         fileUrl: zipUrl,
         fileName: zipFileName,
         expiryMinutes,
       })
-      console.log('8. Metadata save complete')
+      console.log(`[${new Date().toISOString()}] 8. Metadata save complete`)
 
       const metadata = {
         linkId,
@@ -150,9 +152,11 @@ function App() {
       saveLinkMetadata(linkId, metadata)
 
       setUploadStatus('Generating share link...')
-      console.log('9. Generating share link')
-      setShareUrl(buildShareUrl(linkId))
-      console.log('10. Upload flow finished')
+      console.log(`[${new Date().toISOString()}] 9. Generating share link`)
+      const generatedShareUrl = buildShareUrl(linkId)
+      console.log(`[${new Date().toISOString()}] Share URL generated:`, generatedShareUrl)
+      setShareUrl(generatedShareUrl)
+      console.log(`[${new Date().toISOString()}] 10. Upload flow finished`)
       setExpiresAt(expiresAtTime)
       setUploadProgress(100)
       setUploadStatus('Upload complete')
@@ -167,6 +171,8 @@ function App() {
       setUploadStatus('')
     } finally {
       setIsUploading(false)
+      console.timeEnd('upload-pipeline')
+      console.groupEnd()
     }
   }
 
