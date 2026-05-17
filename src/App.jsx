@@ -57,11 +57,11 @@ function App() {
     const expiresAtTime = Date.now() + expiryMinutes * 60 * 1000
 
     setIsUploading(true)
-    setUploadStatus('Preparing ZIP archive...')
+    setUploadStatus('Preparing archive...')
     console.group('UPLOAD PIPELINE')
     console.time('upload-pipeline')
     try {
-      console.log(`[${new Date().toISOString()}] 1. Starting ZIP generation`)
+      console.log(`[${new Date().toISOString()}] 1. Starting upload preparation`)
       // Prepare entries metadata for ZIP and metadata storage
       const entries = selectedFiles.map((entry) => (entry && entry.file ? entry : { file: entry, name: entry.name, size: entry.size, relativePath: entry.webkitRelativePath || entry.name }))
 
@@ -80,44 +80,66 @@ function App() {
         throw new Error('No files were collected from the selected folder/files.')
       }
 
+      const shouldZip =
+        entries.length > 1 ||
+        entries.some((entry) => {
+          const relativePath = entry?.file?.webkitRelativePath || entry?.relativePath || ''
+          return relativePath.includes('/')
+        })
+
+      console.log('Upload mode:', shouldZip ? 'zip' : 'direct file')
+
       const totalSize = entries.reduce((acc, e) => acc + ((e && e.size) || (e.file && e.file.size) || 0), 0)
       if (totalSize > 300 * 1024 * 1024) {
         setUploadStatus('Large archive detected — this may take a while')
       }
 
-      // Create ZIP in browser with progress
-      setUploadStatus('Compressing files...')
-      const zipBlob = await createZip(entries, {
-        onProgress: (p) => {
-          setUploadProgress(p)
-          setUploadStatus(`Compressing... ${p}%`)
-        },
-      })
-      console.log(`[${new Date().toISOString()}] 2. ZIP generation complete`)
+      let uploadTarget
+      let uploadedFileName
+      let uploadedFileType
 
-      const zipFileName = `${linkId || customLink || 'cloudrop-files'}.zip`
-      const zipFile = new File([zipBlob], zipFileName, { type: 'application/zip' })
+      if (shouldZip) {
+        setUploadStatus('Preparing archive...')
+        const zipBlob = await createZip(entries, {
+          onProgress: (p) => {
+            setUploadProgress(p)
+            setUploadStatus(`Preparing archive... ${p}%`)
+          },
+        })
+        console.log(`[${new Date().toISOString()}] 2. ZIP generation complete`)
 
-      if (!zipFile.size) {
-        throw new Error('ZIP archive is empty. Folder parsing may have failed.')
+        uploadedFileName = `${linkId || customLink || 'cloudrop-files'}.zip`
+        uploadTarget = new File([zipBlob], uploadedFileName, { type: 'application/zip' })
+        uploadedFileType = uploadTarget.type
+
+        if (!uploadTarget.size) {
+          throw new Error('ZIP archive is empty. Folder parsing may have failed.')
+        }
+
+        console.log({
+          zipName: uploadedFileName,
+          zipType: uploadTarget.type,
+          zipSize: uploadTarget.size,
+        })
+
+        setUploadStatus('Uploading archive...')
+      } else {
+        console.log(`[${new Date().toISOString()}] 2. Direct file upload selected`)
+        uploadTarget = entries[0].file || entries[0]
+        uploadedFileName = uploadTarget.name || entries[0].name || `${linkId || customLink || 'cloudrop-file'}`
+        uploadedFileType = uploadTarget.type || 'application/octet-stream'
+        setUploadStatus('Uploading file...')
       }
 
-      console.log({
-        zipName: zipFileName,
-        zipType: zipFile.type,
-        zipSize: zipFile.size,
-      })
-
-      setUploadStatus('Uploading archive...')
       console.log(`[${new Date().toISOString()}] 3. Requesting upload URL`)
 
-      // Upload the single ZIP file to S3
+      // Upload the chosen file to S3
       const zipUrl = await uploadFile({
-        file: zipFile,
+        file: uploadTarget,
         linkId,
         onProgress: (progress) => {
           setUploadProgress(progress)
-          setUploadStatus(`Uploading archive... ${progress}%`)
+          setUploadStatus(`${shouldZip ? 'Uploading archive' : 'Uploading file'}... ${progress}%`)
         },
       })
 
@@ -134,19 +156,21 @@ function App() {
       await saveLink({
         linkId,
         fileUrl: zipUrl,
-        fileName: zipFileName,
+        fileName: uploadedFileName,
         expiryMinutes,
       })
       console.log(`[${new Date().toISOString()}] 8. Metadata save complete`)
 
       const metadata = {
         linkId,
-        fileName: zipFileName,
+        fileName: uploadedFileName,
         url: zipUrl,
         files: uploadedFiles,
         fileCount: uploadedFiles.length,
         expiresAt: expiresAtTime,
         createdAt: Date.now(),
+        uploadType: shouldZip ? 'zip' : 'direct',
+        fileType: uploadedFileType,
       }
 
       saveLinkMetadata(linkId, metadata)
