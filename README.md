@@ -82,6 +82,16 @@ Cloudrop is designed with a premium modern UI and scalable serverless architectu
 
 ---
 
+# 🌐 Live Demo
+
+🔗 https://cloudrop.vercel.app/
+
+Experience Cloudrop live:
+- Upload files & folders
+- Generate temporary links
+- Download securely
+- Share using QR codes
+
 # ☁️ AWS Cloud Architecture
 
 Cloudrop uses a modern serverless AWS infrastructure to provide scalable and secure temporary file sharing.
