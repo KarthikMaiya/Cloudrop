@@ -59,6 +59,7 @@ function App() {
     setIsUploading(true)
     setUploadStatus('Preparing ZIP archive...')
     try {
+      console.log('1. Starting ZIP generation')
       // Prepare entries metadata for ZIP and metadata storage
       const entries = selectedFiles.map((entry) => (entry && entry.file ? entry : { file: entry, name: entry.name, size: entry.size, relativePath: entry.webkitRelativePath || entry.name }))
 
@@ -90,6 +91,7 @@ function App() {
           setUploadStatus(`Compressing... ${p}%`)
         },
       })
+      console.log('2. ZIP generation complete')
 
       const zipFileName = `${linkId || customLink || 'cloudrop-files'}.zip`
       const zipFile = new File([zipBlob], zipFileName, { type: 'application/zip' })
@@ -105,6 +107,7 @@ function App() {
       })
 
       setUploadStatus('Uploading archive...')
+      console.log('3. Requesting upload URL')
 
       // Upload the single ZIP file to S3
       const zipUrl = await uploadFile({
@@ -124,12 +127,15 @@ function App() {
       }))
 
       // Save metadata through API Gateway → Lambda → DynamoDB.
+      setUploadStatus('Saving metadata...')
+      console.log('7. Saving metadata')
       await saveLink({
         linkId,
         fileUrl: zipUrl,
         fileName: zipFileName,
         expiryMinutes,
       })
+      console.log('8. Metadata save complete')
 
       const metadata = {
         linkId,
@@ -143,7 +149,10 @@ function App() {
 
       saveLinkMetadata(linkId, metadata)
 
+      setUploadStatus('Generating share link...')
+      console.log('9. Generating share link')
       setShareUrl(buildShareUrl(linkId))
+      console.log('10. Upload flow finished')
       setExpiresAt(expiresAtTime)
       setUploadProgress(100)
       setUploadStatus('Upload complete')

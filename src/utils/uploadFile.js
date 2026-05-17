@@ -2,6 +2,7 @@
 // Use `VITE_API_URL` as the base (e.g. https://YOUR_API.execute-api.ap-south-1.amazonaws.com/prod)
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 const GENERATE_UPLOAD_URL_API = `${API_BASE}/generate-upload-url`
+const REQUEST_TIMEOUT_MS = 15000
 
 // Validate API configuration at module load time
 if (!API_BASE) {
@@ -9,6 +10,18 @@ if (!API_BASE) {
     'VITE_API_URL is not set. Upload functionality will not work. ' +
     'Please set VITE_API_URL in your environment (e.g., https://your-api.execute-api.aws.amazonaws.com/prod).',
   )
+}
+
+async function readResponseBody(response) {
+  const text = await response.text().catch(() => '')
+
+  if (!text) return { text: '', data: null }
+
+  try {
+    return { text, data: JSON.parse(text) }
+  } catch {
+    return { text, data: text }
+  }
 }
 
 /**
@@ -39,28 +52,41 @@ export async function uploadFile({ file, linkId, onProgress }) {
   console.debug('[uploadFile] Endpoint:', GENERATE_UPLOAD_URL_API)
   console.debug('[uploadFile] Request payload:', requestBody)
 
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
   const createResp = await fetch(GENERATE_UPLOAD_URL_API, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(requestBody),
+    signal: controller.signal,
+  }).finally(() => {
+    window.clearTimeout(timeoutId)
+  })
+
+  console.log('4. Upload URL received')
+  console.log('[uploadFile] generate-upload-url response:', {
+    status: createResp.status,
+    ok: createResp.ok,
   })
 
   if (!createResp.ok) {
-    const text = await createResp.text().catch(() => '')
+    const body = await readResponseBody(createResp)
     console.error('[uploadFile] Failed response:', {
       status: createResp.status,
       statusText: createResp.statusText,
       endpoint: GENERATE_UPLOAD_URL_API,
-      responseBody: text,
+      responseBody: body.text,
     })
     throw new Error(
-      `Failed to get upload URL (${createResp.status}): ${text || createResp.statusText}. Endpoint: ${GENERATE_UPLOAD_URL_API}`,
+      `Failed to get upload URL (${createResp.status}): ${body.text || createResp.statusText}. Endpoint: ${GENERATE_UPLOAD_URL_API}`,
     )
   }
 
-  const data = await createResp.json()
+  const responseBody = await readResponseBody(createResp)
+  const data = responseBody.data && typeof responseBody.data === 'object' ? responseBody.data : {}
   const uploadUrl = data?.uploadUrl
   const fileUrl = data?.fileUrl
 
@@ -70,6 +96,7 @@ export async function uploadFile({ file, linkId, onProgress }) {
   }
 
   console.debug('[uploadFile] Presigned URL received, uploading file...')
+  console.log('5. Starting S3 upload')
 
   // Upload file bytes to S3. XHR keeps progress events; error details are surfaced explicitly.
   await new Promise((resolve, reject) => {
@@ -84,8 +111,14 @@ export async function uploadFile({ file, linkId, onProgress }) {
     }
 
     xhr.onload = () => {
+      console.debug('[uploadFile] S3 upload response:', {
+        status: xhr.status,
+        statusText: xhr.statusText,
+        ok: xhr.status >= 200 && xhr.status < 300,
+      })
       if (xhr.status >= 200 && xhr.status < 300) {
         if (typeof onProgress === 'function') onProgress(100)
+        console.log('6. S3 upload complete')
         resolve(null)
         return
       }
