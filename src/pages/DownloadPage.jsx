@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './DownloadPage.css'
 
 function isExpired(expiresAt) {
@@ -42,6 +42,8 @@ export default function DownloadPage() {
   const [metadata, setMetadata] = useState(null)
   const [loading, setLoading] = useState(true)
   const [now, setNow] = useState(0)
+  const [isDownloading, setIsDownloading] = useState(false)
+  const cardRef = useRef(null)
 
   useEffect(() => {
     const timerId = setInterval(() => {
@@ -63,9 +65,9 @@ export default function DownloadPage() {
       try {
         const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
         const endpoint = `${API_BASE}/get-link/${linkId}`
-        
+
         console.debug('[DownloadPage] Fetching link metadata from:', endpoint)
-        
+
         const response = await fetch(endpoint)
 
         if (!response.ok) {
@@ -93,6 +95,50 @@ export default function DownloadPage() {
     }
   }, [linkId])
 
+  // Micro-parallax: subtle tilt and light movement based on mouse
+  useEffect(() => {
+    const el = cardRef.current
+    if (!el) return
+
+    let raf = null
+
+    function handleMove(e) {
+      if (raf) cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const rect = el.getBoundingClientRect()
+        const px = (e.clientX - rect.left) / rect.width
+        const py = (e.clientY - rect.top) / rect.height
+        const rx = (py - 0.5) * 4 // rotateX
+        const ry = (px - 0.5) * 8 // rotateY
+        const ty = (py - 0.5) * -6 // translateY subtle
+
+        el.style.setProperty('--card-rx', `${rx}deg`)
+        el.style.setProperty('--card-ry', `${ry}deg`)
+        el.style.setProperty('--card-ty', `${ty}px`)
+        el.style.setProperty('--light-x', `${(px - 0.5) * 40}px`)
+        el.style.setProperty('--light-y', `${(py - 0.5) * 40}px`)
+      })
+    }
+
+    function handleLeave() {
+      if (raf) cancelAnimationFrame(raf)
+      el.style.setProperty('--card-rx', '0deg')
+      el.style.setProperty('--card-ry', '0deg')
+      el.style.setProperty('--card-ty', '0px')
+      el.style.setProperty('--light-x', '0px')
+      el.style.setProperty('--light-y', '0px')
+    }
+
+    el.addEventListener('mousemove', handleMove)
+    el.addEventListener('mouseleave', handleLeave)
+
+    return () => {
+      el.removeEventListener('mousemove', handleMove)
+      el.removeEventListener('mouseleave', handleLeave)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [cardRef])
+
   const missing = !loading && !metadata
   const expired = metadata && isExpired(metadata.expiresAt)
   const timeLeftLabel = metadata ? formatTimeLeft(metadata.expiresAt) : 'Link expired'
@@ -110,6 +156,7 @@ export default function DownloadPage() {
     if (!metadata || expired) return
 
     try {
+      setIsDownloading(true)
       const response = await fetch(metadata.fileUrl)
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
@@ -123,6 +170,9 @@ export default function DownloadPage() {
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error(error)
+    } finally {
+      // small delay to allow spinner/animation to be perceptible
+      setTimeout(() => setIsDownloading(false), 300)
     }
   }
 
@@ -138,7 +188,12 @@ export default function DownloadPage() {
         <p className="downloadSubtitle">Temporary Cloud File Sharing</p>
       </header>
 
-      <div className="downloadCard">
+      <div
+        className={`downloadCard ${expired ? 'expired' : ''} ${isDownloading ? 'downloading' : ''}`}
+        role="region"
+        aria-live="polite"
+        ref={cardRef}
+      >
         {loading ? (
           <div className="downloadStateBlock">
             <p className="stateText">
@@ -179,40 +234,56 @@ export default function DownloadPage() {
                   {fileSizeLabel ? <span>{fileSizeLabel}</span> : null}
                   <span>{expired ? 'Expired' : 'Ready to download'}</span>
                 </div>
+
+                <div className="fileDetails">
+                  <div className="fileDetailItem">ZIP Archive</div>
+                  {fileSizeLabel ? <div className="fileDetailItem">{fileSizeLabel}</div> : null}
+                  <div className="fileDetailItem secure">Secure temporary transfer</div>
+                </div>
               </div>
             </div>
 
-            <div className={warningState ? 'expiryPanel expiryPanelWarning' : 'expiryPanel'}>
-              <div className="expiryLabel">Expiry</div>
-              <div className="expiryValue">
-                {expired ? 'Link expired' : `Expires in ${timeLeftLabel}`}
-              </div>
-              <div className="expiryHelper">
-                {expired
-                  ? 'This file is no longer available for download.'
-                  : 'Download before the countdown reaches zero.'}
-              </div>
+            <div className={expired ? 'expiryBlock expiryExpired' : (warningState ? 'expiryBlock expiryWarning' : 'expiryBlock')}>
+              {!expired ? (
+                <div className="countdownWrap">
+                  <div className="countdownLabel">Expires in</div>
+                  <div className={`countdownDigits ${warningState ? 'countdownWarn' : ''}`}>{timeLeftLabel}</div>
+                  <div className="countdownHelper">Automatic deletion after expiry</div>
+                </div>
+              ) : (
+                <div className="expiredWrap">
+                  <div className="expiredTitle">This secure transfer has expired</div>
+                  <div className="expiredHint">Files are no longer available. Ask the sender to create a new link.</div>
+                </div>
+              )}
             </div>
 
             <button
-              className="downloadButton"
+              className={`downloadButton primary`}
               onClick={handleDownload}
-              disabled={expired}
+              disabled={expired || isDownloading}
               type="button"
+              aria-busy={isDownloading ? 'true' : 'false'}
             >
               <span className="downloadButtonIcon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <path
-                    d="M12 3.25c.41 0 .75.34.75.75v8.69l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3.75 3.75a.75.75 0 0 1-1.06 0l-3.75-3.75a.75.75 0 0 1 1.06-1.06l2.47 2.47V4c0-.41.34-.75.75-.75Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M4.75 17.75c0-.41.34-.75.75-.75h13a.75.75 0 0 1 0 1.5h-13a.75.75 0 0 1-.75-.75Z"
-                    fill="currentColor"
-                  />
-                </svg>
+                {isDownloading ? (
+                  <svg className="spinner" viewBox="0 0 24 24" focusable="false">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeDasharray="42" strokeDashoffset="30"/>
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path
+                      d="M12 3.25c.41 0 .75.34.75.75v8.69l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3.75 3.75a.75.75 0 0 1-1.06 0l-3.75-3.75a.75.75 0 0 1 1.06-1.06l2.47 2.47V4c0-.41.34-.75.75-.75Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M4.75 17.75c0-.41.34-.75.75-.75h13a.75.75 0 0 1 0 1.5h-13a.75.75 0 0 1-.75-.75Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                )}
               </span>
-              Download File
+              <span className="downloadButtonLabel">{expired ? 'Expired' : (isDownloading ? 'Preparing…' : 'Download File')}</span>
             </button>
 
             <div className="returnCta">

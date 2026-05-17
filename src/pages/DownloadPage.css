@@ -4,7 +4,7 @@
   min-height: calc(100svh - var(--navbar-height));
   display: grid;
   place-items: center;
-  padding: 40px 20px 56px;
+  padding: 64px 20px 56px; /* increased top spacing for cinematic framing */
   overflow: hidden;
 }
 
@@ -61,6 +61,9 @@
   flex-direction: column;
   gap: 18px;
   animation: downloadCardIn 520ms var(--ease-out) both;
+  transition: transform 420ms var(--ease-out), box-shadow 420ms var(--ease-out), background 420ms var(--ease-out);
+  transform: translateY(var(--card-ty, 0)) rotateX(var(--card-rx, 0)) rotateY(var(--card-ry, 0));
+  perspective: 1200px;
 }
 
 .downloadStateBlock {
@@ -94,6 +97,32 @@
   color: var(--text-strong);
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.3);
 }
+
+.downloadCard.expired {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 68%, transparent), color-mix(in srgb, var(--panel-2) 84%, transparent));
+  box-shadow: 0 18px 46px rgba(0,0,0,0.5);
+}
+
+.fileBadge {
+  position: relative;
+  overflow: visible;
+}
+
+.fileBadge::after {
+  content: '';
+  position: absolute;
+  inset: -18px;
+  background: radial-gradient(circle at var(--light-x, 0px) var(--light-y, 0px), color-mix(in srgb, var(--ring) 14%, transparent), transparent 40%);
+  filter: blur(22px);
+  opacity: 0.18;
+  transition: opacity 420ms var(--ease-out), transform 420ms var(--ease-out);
+  pointer-events: none;
+}
+
+.downloadCard.expired .fileBadge::after { opacity: 0.06 }
+
+/* pause breathing when expired */
+.downloadCard.expired .fileBadge { animation: none; opacity: 0.9 }
 
 .fileBadge svg {
   width: 34px;
@@ -137,6 +166,108 @@
   background: color-mix(in srgb, var(--panel-2) 66%, transparent);
 }
 
+.fileDetails {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  align-items: center;
+}
+
+.fileDetailItem {
+  font-size: 13px;
+  color: var(--text-dim);
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel-2) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+}
+
+.fileDetailItem.secure {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ring) 18%, transparent), color-mix(in srgb, var(--panel-2) 64%, transparent));
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.downloadCard:hover {
+  transform: translateY(-6px);
+  transition: transform 420ms var(--ease-out);
+}
+
+.fileBadge {
+  animation: breathe 4200ms ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.01); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+.downloadBackdrop::before,
+.downloadBackdrop::after {
+  content: '';
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  filter: blur(48px);
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+.downloadBackdrop::before {
+  left: -8%;
+  top: -6%;
+  background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--ring) 22%, transparent), transparent 40%);
+  animation: floatLeft 26s linear infinite;
+}
+
+.downloadBackdrop::after {
+  right: -6%;
+  bottom: -8%;
+  background: radial-gradient(circle at 70% 70%, color-mix(in srgb, var(--ring-soft) 20%, transparent), transparent 40%);
+  animation: floatRight 32s linear infinite;
+}
+
+@keyframes floatLeft {
+  from { transform: translateY(0) translateX(0); }
+  to { transform: translateY(18px) translateX(18px); }
+}
+
+@keyframes floatRight {
+  from { transform: translateY(0) translateX(0); }
+  to { transform: translateY(-18px) translateX(-18px); }
+}
+
+.expiryBlock {
+  border-radius: 20px;
+  padding: 10px 14px;
+  display: grid;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--panel-2) 78%, transparent);
+}
+
+.expiryWarning { border-color: color-mix(in srgb, #f59e0b 48%, var(--border)); }
+
+.countdownLabel { color: var(--text-dim); font-size: 12px; text-transform: uppercase; letter-spacing: 0.14em; }
+.countdownDigits {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  font-weight: 800;
+  font-size: 36px;
+  color: var(--text-strong);
+  letter-spacing: -1px;
+  margin-top: 2px;
+}
+.countdownWarn { color: color-mix(in srgb, #f59e0b 86%, var(--text-strong)); text-shadow: 0 4px 18px color-mix(in srgb, #f59e0b 18%, transparent); }
+
+.expiredWrap { color: color-mix(in srgb, var(--text) 70%, #000); }
+.expiredTitle { font-size: 18px; font-weight: 700; color: color-mix(in srgb, #ef4444 90%, var(--text-strong)); }
+.expiredHint { color: var(--text); margin-top: 6px; }
+
+.downloadButton.primary { background: linear-gradient(180deg, color-mix(in srgb, var(--ring) 48%, var(--panel)), color-mix(in srgb, var(--ring) 18%, var(--panel))); box-shadow: 0 26px 48px rgba(0,0,0,0.42), 0 0 44px color-mix(in srgb, var(--ring) 12%, transparent); }
+.downloadButton.primary:hover:not(:disabled) { transform: translateY(-2px) scale(1.01); filter: brightness(1.08); }
+
+
 .expiryPanel {
   border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
@@ -165,6 +296,8 @@
   font-weight: 700;
   letter-spacing: -0.3px;
 }
+
+.countdownDigits { /* ensure large timer across layouts */ }
 
 .expiryHelper {
   color: var(--text);
@@ -199,6 +332,34 @@
     border-color 180ms ease,
     box-shadow 180ms ease;
 }
+
+.downloadButton.primary { position: relative; overflow: hidden; }
+.downloadButton.primary::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  transform: translateX(-110%);
+  transition: transform 900ms ease;
+}
+.downloadButton.primary:hover::before { transform: translateX(10%); }
+
+.downloadButton .spinner { width: 20px; height: 20px; animation: spin 900ms linear infinite; opacity: 0.95 }
+@keyframes spin { to { transform: rotate(360deg) } }
+
+.downloadButton.downloading { cursor: progress }
+
+/* Secondary CTA weight reduction */
+.returnButton { opacity: 0.86; border-color: color-mix(in srgb, var(--border) 65%, transparent); background: transparent; }
+.returnButton:hover { opacity: 1; }
+
+/* expiry transition */
+.downloadCard.expired .downloadButton { opacity: 0.5; transform: translateY(0); filter: none; }
+
+@media (max-width: 720px) {
+  .downloadShell { padding: 54px 16px 32px; }
+  .countdownDigits { font-size: 28px }
+}
+
 
 .downloadButton:hover:not(:disabled) {
   transform: translateY(-1px);
