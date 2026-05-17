@@ -146,6 +146,9 @@ export default function DownloadPage() {
     ? Math.max(0, Math.ceil((metadata.expiresAt - now) / 1000))
     : 0
   const warningState = !expired && timeLeftSeconds <= 60
+  const fileTypeLabel = metadata?.uploadType === 'direct'
+    ? (metadata?.fileType?.startsWith('image/') ? 'Image file' : 'Single file')
+    : 'ZIP archive'
 
   const fileSizeLabel = useMemo(
     () => formatFileSize(metadata?.fileSize ?? metadata?.size),
@@ -236,7 +239,7 @@ export default function DownloadPage() {
                 </div>
 
                 <div className="fileDetails">
-                  <div className="fileDetailItem">ZIP Archive</div>
+                  <div className="fileDetailItem">{fileTypeLabel}</div>
                   {fileSizeLabel ? <div className="fileDetailItem">{fileSizeLabel}</div> : null}
                   <div className="fileDetailItem secure">Secure temporary transfer</div>
                 </div>
