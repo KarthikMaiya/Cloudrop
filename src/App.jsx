@@ -9,8 +9,12 @@ import { Routes, Route } from 'react-router-dom'
 import { saveLinkMetadata, buildShareUrl } from './utils/linkStorage'
 import { sanitizeLinkId } from './utils/linkId'
 import { saveLink } from './utils/saveLink'
+import { validateConfig } from './utils/validateConfig'
 
 import { useState } from 'react'
+
+// Validate configuration at app startup
+validateConfig()
 
 function App() {
   // File + link state live in App so the upload flow is easy to follow.

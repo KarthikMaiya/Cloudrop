@@ -62,13 +62,27 @@ export default function DownloadPage() {
     async function fetchLink() {
       try {
         const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
-        const response = await fetch(`${API_BASE}/get-link/${linkId}`)
+        const endpoint = `${API_BASE}/get-link/${linkId}`
+        
+        console.debug('[DownloadPage] Fetching link metadata from:', endpoint)
+        
+        const response = await fetch(endpoint)
+
+        if (!response.ok) {
+          const text = await response.text().catch(() => '')
+          console.error('[DownloadPage] Failed to fetch link:', {
+            status: response.status,
+            statusText: response.statusText,
+            endpoint,
+            responseBody: text,
+          })
+          throw new Error(`Failed to fetch link (${response.status}): ${text || response.statusText}`)
+        }
 
         const data = await response.json()
-
         setMetadata(data)
       } catch (error) {
-        console.error(error)
+        console.error('[DownloadPage] Error:', error)
       } finally {
         setLoading(false)
       }

@@ -8,11 +8,6 @@ const EXPIRY_OPTIONS = [
   { value: 10, label: '10 Minutes' },
 ]
 
-function formatFileName(file) {
-  if (!file) return ''
-  return file.name
-}
-
 function formatFileSize(bytes) {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
   const units = ['B', 'KB', 'MB', 'GB']
@@ -26,6 +21,55 @@ function formatFileSize(bytes) {
 
   const precision = value >= 10 || unitIndex === 0 ? 0 : 1
   return `${value.toFixed(precision)} ${units[unitIndex]}`
+}
+
+// Build a tree structure from flat file entries with relativePath
+function buildFileTree(files) {
+  const root = { type: 'folder', name: 'root', children: new Map() }
+
+  for (const fileEntry of files) {
+    const parts = fileEntry.relativePath.split('/').filter(Boolean)
+    let current = root
+
+    for (let i = 0; i < parts.length; i += 1) {
+      const part = parts[i]
+      const isLast = i === parts.length - 1
+
+      if (isLast) {
+        // This is a file
+        current.children.set(part, {
+          type: 'file',
+          name: part,
+          relativePath: fileEntry.relativePath,
+          size: fileEntry.size,
+          file: fileEntry.file,
+          fileEntry,
+        })
+      } else {
+        // This is a folder
+        if (!current.children.has(part)) {
+          current.children.set(part, {
+            type: 'folder',
+            name: part,
+            children: new Map(),
+          })
+        }
+        current = current.children.get(part)
+      }
+    }
+  }
+
+  // Convert Maps to arrays for rendering
+  function mapToArray(node) {
+    if (node.type === 'file') return node
+
+    return {
+      ...node,
+      children: Array.from(node.children.values()).map(mapToArray),
+    }
+  }
+
+  return Array.from(root.children.values()).map(mapToArray)
 }
 
 function normalizeFileEntry(item) {
@@ -168,10 +212,74 @@ export default function UploadCard({
   const [now, setNow] = useState(0)
   const [isExpiryOpen, setIsExpiryOpen] = useState(false)
   const [expiryActiveIndex, setExpiryActiveIndex] = useState(0)
+  const [removingPaths, setRemovingPaths] = useState(new Set())
+  const [expandedFolders, setExpandedFolders] = useState(new Set())
+
   const safeSelectedFiles = useMemo(
     () => (Array.isArray(selectedFiles) ? selectedFiles : []),
     [selectedFiles],
   )
+
+  const fileTree = useMemo(
+    () => buildFileTree(safeSelectedFiles),
+    [safeSelectedFiles],
+  )
+
+  // Helper to remove by relativePath. If the target is a folder root,
+  // remove all entries that start with `${root}/` as well.
+  function handleRemoveByRelativePath(targetRelativePath) {
+    if (!Array.isArray(safeSelectedFiles)) return
+
+    // Compute new selection for parent state immediately
+    const isFolderRoot = safeSelectedFiles.some((e) => e.relativePath.startsWith(`${targetRelativePath}/`))
+    const newSelection = safeSelectedFiles.filter((e) => {
+      if (isFolderRoot) return !e.relativePath.startsWith(`${targetRelativePath}/`)
+      return e.relativePath !== targetRelativePath
+    })
+
+    // Add to removing set for animation
+    setRemovingPaths((prev) => {
+      const next = new Set(prev)
+      if (isFolderRoot) {
+        safeSelectedFiles.forEach((e) => {
+          if (e.relativePath.startsWith(`${targetRelativePath}/`)) next.add(e.relativePath)
+        })
+      } else {
+        next.add(targetRelativePath)
+      }
+      return next
+    })
+
+    // Update parent selection immediately so counts/sizes update
+    onFilesSelected?.(newSelection)
+
+    // Remove from animation set after animation completes
+    setTimeout(() => {
+      setRemovingPaths((prev) => {
+        const next = new Set(prev)
+        if (isFolderRoot) {
+          safeSelectedFiles.forEach((e) => {
+            if (e.relativePath.startsWith(`${targetRelativePath}/`)) next.delete(e.relativePath)
+          })
+        } else {
+          next.delete(targetRelativePath)
+        }
+        return next
+      })
+    }, 240)
+  }
+
+  function toggleFolderExpanded(folderPath) {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev)
+      if (next.has(folderPath)) {
+        next.delete(folderPath)
+      } else {
+        next.add(folderPath)
+      }
+      return next
+    })
+  }
 
   useEffect(() => {
     if (!shareUrl || !expiresAt) return
@@ -190,22 +298,10 @@ export default function UploadCard({
     }
   }, [shareUrl, expiresAt])
 
-  const selectedFileSummary = useMemo(() => {
-    if (!safeSelectedFiles.length) return 'No files selected'
-    if (safeSelectedFiles.length === 1) return formatFileName(safeSelectedFiles[0])
-    return `${formatFileName(safeSelectedFiles[0])} + ${safeSelectedFiles.length - 1} more`
-  }, [safeSelectedFiles])
-
-  const selectedFileCountLabel = useMemo(() => {
-    if (!safeSelectedFiles.length) return 'No files selected'
-    if (safeSelectedFiles.length === 1) return '1 file selected'
-    return `${safeSelectedFiles.length} files selected`
-  }, [safeSelectedFiles])
-
-  const selectedTotalSizeLabel = useMemo(() => {
-    if (!safeSelectedFiles.length) return '0 B total'
+  const selectedSummaryLabel = useMemo(() => {
+    if (!safeSelectedFiles.length) return 'No items selected'
     const total = safeSelectedFiles.reduce((acc, current) => acc + (current?.size || 0), 0)
-    return `${formatFileSize(total)} total`
+    return `${safeSelectedFiles.length} items • ${formatFileSize(total)}`
   }, [safeSelectedFiles])
 
   const selectedExpiryIndex = useMemo(() => {
@@ -561,27 +657,127 @@ export default function UploadCard({
           aria-label="Folder upload input"
         />
 
-        <div className="fieldRow" aria-live="polite">
-          <div className="fieldLabel">Selected files</div>
-          <div className={safeSelectedFiles.length ? 'filePill' : 'filePill filePillEmpty'}>
-            {selectedFileSummary}
-          </div>
-        </div>
-
         {safeSelectedFiles.length ? (
           <div className="filePreview" aria-live="polite">
             <div className="filePreviewHeader">
-              <span className="filePreviewCount">{selectedFileCountLabel}</span>
-              <span className="filePreviewSize">{selectedTotalSizeLabel}</span>
+              <div className="filePreviewHeaderMain">
+                <span className="filePreviewTitle">Selected uploads</span>
+                <span className="filePreviewSubtitle">Preview and curate before upload</span>
+              </div>
+              <span className="filePreviewCount">{selectedSummaryLabel}</span>
             </div>
 
-            <ul className="filePreviewList" aria-label="Selected files">
-              {safeSelectedFiles.map((file) => (
-                <li key={`${file.relativePath}-${file.size}-${file.file?.lastModified ?? 0}`} className="filePreviewItem">
-                  <span className="filePreviewName" title={file.name}>{file.name}</span>
-                  <span className="filePreviewMeta">{formatFileSize(file.size)}</span>
-                </li>
-              ))}
+            <ul className="filePreviewList" aria-label="Selected uploads">
+              {(() => {
+                function renderTreeNode(node, depth = 0, parentPath = '') {
+                  if (node.type === 'file') {
+                    const isRemoving = removingPaths.has(node.relativePath)
+                    const indent = depth * 16
+
+                    return (
+                      <li
+                        key={`file-${node.relativePath}`}
+                        className={`filePreviewItem filePreviewItemFile ${isRemoving ? 'removing' : ''}`}
+                        style={{ marginLeft: `${indent}px` }}
+                      >
+                        <div className="filePreviewMain">
+                          <span className="filePreviewIcon filePreviewIconFile" aria-hidden="true">📄</span>
+                          <span className="filePreviewName" title={node.name}>{node.name}</span>
+                        </div>
+                        <div className="filePreviewActions">
+                          <span className="filePreviewMeta">{formatFileSize(node.size)}</span>
+                          <button
+                            type="button"
+                            className="fileRemoveButton"
+                            aria-label={`Remove file ${node.name}`}
+                            onClick={() => handleRemoveByRelativePath(node.relativePath)}
+                          >
+                            <svg className="minusIcon" viewBox="0 0 48 48" width="24" height="24" focusable="false" aria-hidden="true">
+                              <circle cx="24" cy="24" r="22" fill="currentColor" />
+                              <rect x="12" y="21.5" width="24" height="5" rx="2.5" fill="#0b0f14" />
+                            </svg>
+                          </button>
+                        </div>
+                      </li>
+                    )
+                  }
+
+                  // Folder node
+                  const folderKey = `${parentPath}${node.name}`
+                  const isExpanded = expandedFolders.has(folderKey)
+                  const childrenCount = node.children ? node.children.length : 0
+                  const indent = depth * 16
+
+                  const results = [
+                    <li
+                      key={`folder-${folderKey}`}
+                      className="filePreviewItem filePreviewItemFolder"
+                      style={{ marginLeft: `${indent}px` }}
+                    >
+                      <div className="filePreviewMain">
+                        <button
+                          type="button"
+                          className="folderToggleButton"
+                          onClick={() => toggleFolderExpanded(folderKey)}
+                          aria-label={`${isExpanded ? 'Collapse' : 'Expand'} folder ${node.name}`}
+                        >
+                          <svg
+                            className={`folderChevron ${isExpanded ? 'expanded' : ''}`}
+                            viewBox="0 0 24 24"
+                            width="16"
+                            height="16"
+                            focusable="false"
+                            aria-hidden="true"
+                          >
+                            <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                        <span className="filePreviewIcon filePreviewIconFolder" aria-hidden="true">📁</span>
+                        <span className="filePreviewName filePreviewNameFolder" title={node.name}>{node.name}</span>
+                      </div>
+                      <div className="filePreviewActions">
+                        <span className="filePreviewMeta">{childrenCount} item{childrenCount !== 1 ? 's' : ''}</span>
+                        <button
+                          type="button"
+                          className="fileRemoveButton fileRemoveButtonFolder"
+                          aria-label={`Remove folder ${node.name}`}
+                          onClick={() => handleRemoveByRelativePath(folderKey)}
+                        >
+                          <svg className="minusIcon" viewBox="0 0 48 48" width="24" height="24" focusable="false" aria-hidden="true">
+                            <circle cx="24" cy="24" r="22" fill="currentColor" />
+                            <rect x="12" y="21.5" width="24" height="5" rx="2.5" fill="#0b0f14" />
+                          </svg>
+                        </button>
+                      </div>
+                    </li>,
+                  ]
+
+                  if (isExpanded && node.children && node.children.length > 0) {
+                    for (const child of node.children) {
+                      const nextParentPath = `${folderKey}/`
+                      const childNodes = renderTreeNode(child, depth + 1, nextParentPath)
+                      if (Array.isArray(childNodes)) {
+                        results.push(...childNodes)
+                      } else {
+                        results.push(childNodes)
+                      }
+                    }
+                  }
+
+                  return results
+                }
+
+                const allNodes = []
+                for (const rootNode of fileTree) {
+                  const nodes = renderTreeNode(rootNode, 0, '')
+                  if (Array.isArray(nodes)) {
+                    allNodes.push(...nodes)
+                  } else {
+                    allNodes.push(nodes)
+                  }
+                }
+                return allNodes
+              })()}
             </ul>
           </div>
         ) : null}
