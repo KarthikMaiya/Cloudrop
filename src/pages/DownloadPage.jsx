@@ -182,128 +182,126 @@ export default function DownloadPage() {
   return (
     <section className="downloadShell" aria-label="Download">
       <div className="downloadBackdrop" aria-hidden="true" />
-      <div className="downloadWordmark" aria-hidden="true">
-        Cloudrop
-      </div>
+      <main className="downloadLayout">
+        <header className="downloadHeader">
+          <Link className="downloadTitle" to="/">
+            Cloudrop
+          </Link>
 
-      <header className="downloadHeader">
-        <Link className="downloadTitle" to="/">
-          Cloudrop
-        </Link>
+          <p className="downloadSubtitle">Secure temporary cloud transfer</p>
+        </header>
 
-        <p className="downloadSubtitle">Temporary Cloud File Sharing</p>
-      </header>
-
-      <div
-        className={`downloadCard ${expired ? 'expired' : ''} ${isDownloading ? 'downloading' : ''}`}
-        role="region"
-        aria-live="polite"
-        ref={cardRef}
-      >
-        {loading ? (
-          <div className="downloadStateBlock">
-            <p className="stateText">
-              <span className="stateStrong">Loading your secure link...</span>
-            </p>
-          </div>
-        ) : missing ? (
-          <div className="downloadStateBlock">
-            <p className="stateText">
-              <span className="stateStrong">Link not found</span>
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="downloadHero">
-              <div className="fileBadge" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <path
-                    d="M7 2.75c0-.41.34-.75.75-.75h6.5c.2 0 .39.08.53.22l4.75 4.75c.14.14.22.33.22.53v13.5c0 .96-.79 1.75-1.75 1.75h-10c-.96 0-1.75-.79-1.75-1.75v-18.5Z"
-                    fill="currentColor"
-                    opacity="0.95"
-                  />
-                  <path
-                    d="M14 2v4.25c0 .41.34.75.75.75H19"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-
-              <div className="downloadHeroText">
-                <p className="eyebrow">Secure temporary file</p>
-                <h1 className="fileName">{metadata.fileName || 'Unknown file'}</h1>
-                <div className="downloadMetaRow">
-                  {fileSizeLabel ? <span>{fileSizeLabel}</span> : null}
-                  <span>{expired ? 'Expired' : 'Ready to download'}</span>
-                </div>
-
-                <div className="fileDetails">
-                  <div className="fileDetailItem">{fileTypeLabel}</div>
-                  {fileSizeLabel ? <div className="fileDetailItem">{fileSizeLabel}</div> : null}
-                  <div className="fileDetailItem secure">Secure temporary transfer</div>
-                </div>
-              </div>
+        <div
+          className={`downloadCard ${expired ? 'expired' : ''} ${isDownloading ? 'downloading' : ''}`}
+          role="region"
+          aria-live="polite"
+          ref={cardRef}
+        >
+          {loading ? (
+            <div className="downloadStateBlock">
+              <p className="stateText">
+                <span className="stateStrong">Loading your secure link...</span>
+              </p>
             </div>
-
-            <div className={expired ? 'expiryBlock expiryExpired' : (warningState ? 'expiryBlock expiryWarning' : 'expiryBlock')}>
-              {!expired ? (
-                <div className="countdownWrap">
-                  <div className="countdownLabel">Expires in</div>
-                  <div className={`countdownDigits ${warningState ? 'countdownWarn' : ''}`}>{timeLeftLabel}</div>
-                  <div className="countdownHelper">Automatic deletion after expiry</div>
-                </div>
-              ) : (
-                <div className="expiredWrap">
-                  <div className="expiredTitle">This secure transfer has expired</div>
-                  <div className="expiredHint">Files are no longer available. Ask the sender to create a new link.</div>
-                </div>
-              )}
+          ) : missing ? (
+            <div className="downloadStateBlock">
+              <p className="stateText">
+                <span className="stateStrong">Link not found</span>
+              </p>
             </div>
-
-            <button
-              className={`downloadButton primary`}
-              onClick={handleDownload}
-              disabled={expired || isDownloading}
-              type="button"
-              aria-busy={isDownloading ? 'true' : 'false'}
-            >
-              <span className="downloadButtonIcon" aria-hidden="true">
-                {isDownloading ? (
-                  <svg className="spinner" viewBox="0 0 24 24" focusable="false">
-                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeDasharray="42" strokeDashoffset="30"/>
-                  </svg>
-                ) : (
+          ) : (
+            <>
+              <div className="downloadHero">
+                <div className="fileBadge" aria-hidden="true">
                   <svg viewBox="0 0 24 24" focusable="false">
                     <path
-                      d="M12 3.25c.41 0 .75.34.75.75v8.69l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3.75 3.75a.75.75 0 0 1-1.06 0l-3.75-3.75a.75.75 0 0 1 1.06-1.06l2.47 2.47V4c0-.41.34-.75.75-.75Z"
+                      d="M7 2.75c0-.41.34-.75.75-.75h6.5c.2 0 .39.08.53.22l4.75 4.75c.14.14.22.33.22.53v13.5c0 .96-.79 1.75-1.75 1.75h-10c-.96 0-1.75-.79-1.75-1.75v-18.5Z"
                       fill="currentColor"
+                      opacity="0.95"
                     />
                     <path
-                      d="M4.75 17.75c0-.41.34-.75.75-.75h13a.75.75 0 0 1 0 1.5h-13a.75.75 0 0 1-.75-.75Z"
-                      fill="currentColor"
+                      d="M14 2v4.25c0 .41.34.75.75.75H19"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   </svg>
-                )}
-              </span>
-              <span className="downloadButtonLabel">{expired ? 'Expired' : (isDownloading ? 'Preparing…' : 'Download File')}</span>
-            </button>
+                </div>
 
-            <div className="returnCta">
-              <div>
-                <div className="returnQuestion">Want to share files too?</div>
-                <div className="returnHint">Go back to Cloudrop and create a fresh secure link.</div>
+                <div className="downloadHeroText">
+                  <p className="eyebrow">Secure temporary file</p>
+                  <h1 className="fileName">{metadata.fileName || 'Unknown file'}</h1>
+                  <div className="downloadMetaRow">
+                    {fileSizeLabel ? <span>{fileSizeLabel}</span> : null}
+                    <span>{expired ? 'Expired' : 'Ready to download'}</span>
+                  </div>
+
+                  <div className="fileDetails">
+                    <div className="fileDetailItem">{fileTypeLabel}</div>
+                    {fileSizeLabel ? <div className="fileDetailItem">{fileSizeLabel}</div> : null}
+                    <div className="fileDetailItem secure">Secure temporary transfer</div>
+                  </div>
+                </div>
               </div>
-              <Link className="returnButton" to="/">
-                Share Files
-              </Link>
-            </div>
-          </>
-        )}
-      </div>
+
+              <div className={expired ? 'expiryBlock expiryExpired' : (warningState ? 'expiryBlock expiryWarning' : 'expiryBlock')}>
+                {!expired ? (
+                  <div className="countdownWrap">
+                    <div className="countdownLabel">Expires in</div>
+                    <div className={`countdownDigits ${warningState ? 'countdownWarn' : ''}`}>{timeLeftLabel}</div>
+                    <div className="countdownHelper">Automatic deletion after expiry</div>
+                  </div>
+                ) : (
+                  <div className="expiredWrap">
+                    <div className="expiredTitle">This secure transfer has expired</div>
+                    <div className="expiredHint">Files are no longer available. Ask the sender to create a new link.</div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                className={`downloadButton primary`}
+                onClick={handleDownload}
+                disabled={expired || isDownloading}
+                type="button"
+                aria-busy={isDownloading ? 'true' : 'false'}
+              >
+                <span className="downloadButtonIcon" aria-hidden="true">
+                  {isDownloading ? (
+                    <svg className="spinner" viewBox="0 0 24 24" focusable="false">
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeDasharray="42" strokeDashoffset="30"/>
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" focusable="false">
+                      <path
+                        d="M12 3.25c.41 0 .75.34.75.75v8.69l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3.75 3.75a.75.75 0 0 1-1.06 0l-3.75-3.75a.75.75 0 0 1 1.06-1.06l2.47 2.47V4c0-.41.34-.75.75-.75Z"
+                        fill="currentColor"
+                      />
+                      <path
+                        d="M4.75 17.75c0-.41.34-.75.75-.75h13a.75.75 0 0 1 0 1.5h-13a.75.75 0 0 1-.75-.75Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  )}
+                </span>
+                <span className="downloadButtonLabel">{expired ? 'Expired' : (isDownloading ? 'Preparing…' : 'Download File')}</span>
+              </button>
+
+              <div className="returnCta">
+                <div>
+                  <div className="returnQuestion">Want to share files too?</div>
+                  <div className="returnHint">Go back to Cloudrop and create a fresh secure link.</div>
+                </div>
+                <Link className="returnButton" to="/">
+                  Share Files
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+      </main>
     </section>
   )
 }
