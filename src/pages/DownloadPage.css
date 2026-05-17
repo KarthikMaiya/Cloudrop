@@ -18,6 +18,24 @@
     linear-gradient(180deg, color-mix(in srgb, var(--bg) 94%, #000 6%), var(--bg));
 }
 
+  .downloadWordmark {
+    position: absolute;
+    top: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+    font-size: clamp(72px, 12vw, 132px);
+    font-weight: 800;
+    letter-spacing: -0.09em;
+    color: color-mix(in srgb, var(--text-strong) 88%, transparent);
+    opacity: 0.12;
+    text-shadow: 0 0 28px color-mix(in srgb, var(--ring-soft) 32%, transparent);
+    filter: saturate(0.9);
+  }
+
 .downloadBackdrop::before,
 .downloadBackdrop::after {
   content: '';
@@ -43,10 +61,10 @@
 
 .downloadHeader {
   position: absolute;
-  top: 22px;
+  top: 18px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1;
+  z-index: 2;
   text-align: center;
 }
 
@@ -68,7 +86,7 @@
 
 .downloadCard {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: min(720px, 100%);
   padding: 26px;
   border-radius: 28px;
@@ -419,6 +437,12 @@
 @media (max-width: 760px) {
   .downloadShell {
     padding: 48px 16px 28px;
+  }
+
+  .downloadWordmark {
+    top: 70px;
+    font-size: clamp(54px, 16vw, 88px);
+    opacity: 0.1;
   }
 
   .downloadHeader {

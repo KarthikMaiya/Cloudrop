@@ -182,6 +182,9 @@ export default function DownloadPage() {
   return (
     <section className="downloadShell" aria-label="Download">
       <div className="downloadBackdrop" aria-hidden="true" />
+      <div className="downloadWordmark" aria-hidden="true">
+        Cloudrop
+      </div>
 
       <header className="downloadHeader">
         <Link className="downloadTitle" to="/">
