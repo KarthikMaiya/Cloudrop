@@ -2,7 +2,6 @@
 // Use `VITE_API_URL` as the base (e.g. https://YOUR_API.execute-api.ap-south-1.amazonaws.com/prod)
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 const GENERATE_UPLOAD_URL_API = `${API_BASE}/generate-upload-url`
-const REQUEST_TIMEOUT_MS = 15000
 
 // Validate API configuration at module load time
 if (!API_BASE) {
@@ -52,8 +51,8 @@ export async function uploadFile({ file, linkId, onProgress }) {
   console.debug('[uploadFile] Endpoint:', GENERATE_UPLOAD_URL_API)
   console.debug('[uploadFile] Request payload:', requestBody)
 
-  const controller = new AbortController()
-  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  console.log('Creating request for /generate-upload-url')
+  console.log('Starting request')
 
   const createResp = await fetch(GENERATE_UPLOAD_URL_API, {
     method: 'POST',
@@ -61,10 +60,9 @@ export async function uploadFile({ file, linkId, onProgress }) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(requestBody),
-    signal: controller.signal,
-  }).finally(() => {
-    window.clearTimeout(timeoutId)
   })
+
+  console.log('Request completed')
 
   console.log('4. Upload URL received')
   console.log('[uploadFile] generate-upload-url response:', {
