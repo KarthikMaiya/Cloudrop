@@ -277,6 +277,9 @@ export default function LandingPage(props) {
           <div className="footerBrand">Cloudrop</div>
           <div className="footerMeta">Built with AWS serverless architecture</div>
         </div>
+        <div className="footerSignature">
+          <p className="signature">Built and designed by Karthik Maiya</p>
+        </div>
       </footer>
     </div>
   )
