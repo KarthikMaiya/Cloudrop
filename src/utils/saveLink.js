@@ -1,13 +1,6 @@
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+// API base URL is resolved by apiConfig.js based on VITE_BACKEND_MODE.
+import { API_BASE } from './apiConfig.js'
 const API_URL = `${API_BASE}/save-link`
-
-// Validate API configuration at module load time
-if (!API_BASE) {
-  console.warn(
-    'VITE_API_URL is not set. Save link functionality will not work. ' +
-    'Please set VITE_API_URL in your environment (e.g., https://your-api.execute-api.aws.amazonaws.com/prod).',
-  )
-}
 
 async function readResponseBody(response) {
   const text = await response.text().catch(() => '')
@@ -24,7 +17,8 @@ async function readResponseBody(response) {
 export async function saveLink({ linkId, fileUrl, fileName, expiryMinutes }) {
   if (!API_BASE) {
     throw new Error(
-      'API base URL not configured. Please set the VITE_API_URL environment variable.',
+      'API base URL not configured. ' +
+      'Serverless mode: set VITE_API_URL. Express mode: set VITE_BACKEND_MODE=express and VITE_EXPRESS_URL.',
     )
   }
 

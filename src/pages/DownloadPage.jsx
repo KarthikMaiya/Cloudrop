@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './DownloadPage.css'
+import { API_BASE } from '../utils/apiConfig.js'
 
 function isExpired(expiresAt) {
   if (typeof expiresAt !== 'number') return true
@@ -63,7 +64,7 @@ export default function DownloadPage() {
   useEffect(() => {
     async function fetchLink() {
       try {
-        const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+        // API_BASE is resolved by apiConfig.js based on VITE_BACKEND_MODE.
         const endpoint = `${API_BASE}/get-link/${linkId}`
 
         console.debug('[DownloadPage] Fetching link metadata from:', endpoint)
