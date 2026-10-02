@@ -441,3 +441,44 @@ If you like this project:
 <p align="center">
   <b>☁️ Cloudrop — Fast. Temporary. Secure.</b>
 </p>
+
+
+---
+
+## 🧪 Experimental: Express Backend (Phase 1)
+
+> **Branch:** `feature/express-backend-experiment` — experimental only, not in production.
+
+Alongside the production serverless architecture, this repository includes an alternative Node.js/Express backend for architectural comparison and interview demonstration.
+
+### What it is
+
+A conventional, continuously-running Express server that reimplements the same API surface (`/generate-upload-url`, `/save-link`, `/get-link/:linkId`, `/health`) using the same AWS S3 bucket and DynamoDB table — **without** modifying any Lambda functions, API Gateway configuration, or production resources.
+
+### Quick start (Express mode)
+
+```bash
+# Terminal 1 — start the Express server
+cd server
+cp .env.example .env   # fill in AWS_REGION, S3_BUCKET, DYNAMODB_TABLE
+npm install
+npm run dev            # → http://localhost:3001
+
+# Terminal 2 — start the frontend pointing at Express
+# In root .env:  VITE_BACKEND_MODE=express  VITE_EXPRESS_URL=http://localhost:3001
+npm run dev            # → http://localhost:5173
+```
+
+### Switching back to serverless
+
+```env
+# root .env
+VITE_BACKEND_MODE=serverless
+VITE_API_URL=https://your-api.execute-api.ap-south-1.amazonaws.com/prod
+```
+
+Restart Vite (`npm run dev`) — no code changes required.
+
+### Full documentation
+
+See **[docs/EXPRESS_EXPERIMENT.md](docs/EXPRESS_EXPERIMENT.md)** for the architecture comparison, AWS IAM permissions, API reference, test suite details, and Phase 2 (Docker + Kubernetes) roadmap.

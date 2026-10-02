@@ -18,14 +18,10 @@
 
 const mode = import.meta.env.VITE_BACKEND_MODE || 'serverless'
 
-let rawBase = ''
-
-if (mode === 'express') {
-  rawBase = import.meta.env.VITE_EXPRESS_URL || 'http://localhost:3001'
-} else {
-  // 'serverless' or any unrecognised value — use the original API Gateway URL
-  rawBase = import.meta.env.VITE_API_URL || ''
-}
+const rawBase =
+  mode === 'express'
+    ? (import.meta.env.VITE_EXPRESS_URL || 'http://localhost:3001')
+    : (import.meta.env.VITE_API_URL || '')
 
 /**
  * The resolved API base URL, with any trailing slash removed.
