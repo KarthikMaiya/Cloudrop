@@ -1,15 +1,8 @@
-// Uploads are performed via a backend-generated presigned URL.
-// Use `VITE_API_URL` as the base (e.g. https://YOUR_API.execute-api.ap-south-1.amazonaws.com/prod)
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+// API base URL is resolved by apiConfig.js based on VITE_BACKEND_MODE.
+// Set VITE_BACKEND_MODE=serverless (API Gateway) or VITE_BACKEND_MODE=express
+// (local Express server) in your .env file. No component code changes needed.
+import { API_BASE } from './apiConfig.js'
 const GENERATE_UPLOAD_URL_API = `${API_BASE}/generate-upload-url`
-
-// Validate API configuration at module load time
-if (!API_BASE) {
-  console.warn(
-    'VITE_API_URL is not set. Upload functionality will not work. ' +
-    'Please set VITE_API_URL in your environment (e.g., https://your-api.execute-api.aws.amazonaws.com/prod).',
-  )
-}
 
 async function readResponseBody(response) {
   const text = await response.text().catch(() => '')
@@ -35,8 +28,9 @@ export async function uploadFile({ file, linkId, onProgress }) {
 
   if (!API_BASE) {
     throw new Error(
-      'API base URL not configured. Please set the VITE_API_URL environment variable. ' +
-      'Example: https://your-api.execute-api.aws.amazonaws.com/prod',
+      'API base URL not configured. ' +
+      'Serverless mode: set VITE_API_URL in your .env file. ' +
+      'Express mode: set VITE_BACKEND_MODE=express and VITE_EXPRESS_URL=http://localhost:3001.',
     )
   }
 
